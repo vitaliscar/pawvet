@@ -1,0 +1,11 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --surface: #f7faf8;
+}
+
+body {
+  @apply bg-[var(--surface)] text-ink antialiased;
+}

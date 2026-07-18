@@ -1,0 +1,38 @@
+# Dependencies
+node_modules/
+.pnp
+.pnp.js
+
+# Env / secrets — NUNCA commitear
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+docs/Cuentas.txt
+
+# Builds
+dist/
+build/
+.next/
+out/
+.expo/
+*.tsbuildinfo
+
+# Testing
+coverage/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Supabase local
+supabase/.branches
+supabase/.temp
