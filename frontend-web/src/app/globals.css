@@ -3,9 +3,17 @@
 @tailwind utilities;
 
 :root {
-  --surface: #f7faf8;
+  --surface: #faf8f4;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
-  @apply bg-[var(--surface)] text-ink antialiased;
+  @apply bg-cream text-ink antialiased;
+}
+
+::selection {
+  @apply bg-paw-200 text-paw-950;
 }
