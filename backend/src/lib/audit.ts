@@ -1,5 +1,5 @@
 import type { Context } from 'hono';
-import { supabase } from './supabase.js';
+import { ensureAdminAuth, pb } from './pocketbase.js';
 
 interface AuditEntry {
   userId?: string;
@@ -17,16 +17,17 @@ export async function audit(c: Context, entry: AuditEntry): Promise<void> {
     c.req.header('x-forwarded-for')?.split(',')[0]?.trim() ??
     null;
 
-  const { error } = await supabase.from('audit_logs').insert({
-    user_id: entry.userId ?? c.get('user')?.id ?? null,
-    action: entry.action,
-    resource_type: entry.resourceType ?? null,
-    resource_id: entry.resourceId ?? null,
-    details: entry.details ?? null,
-    ip_address: ip,
-  });
-
-  if (error) {
-    console.error('[audit] fallo al registrar evento:', entry.action, error.message);
+  try {
+    await ensureAdminAuth();
+    await pb.collection('audit_logs').create({
+      user_id: entry.userId ?? c.get('user')?.id ?? null,
+      action: entry.action,
+      resource_type: entry.resourceType ?? null,
+      resource_id: entry.resourceId ?? null,
+      details: entry.details ?? null,
+      ip_address: ip,
+    });
+  } catch (err) {
+    console.error('[audit] fallo al registrar evento:', entry.action, err);
   }
 }

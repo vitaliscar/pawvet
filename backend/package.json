@@ -13,11 +13,10 @@
     "lint": "eslint src"
   },
   "dependencies": {
-    "@clerk/backend": "^1.21.0",
     "@hono/node-server": "^1.13.0",
-    "@supabase/supabase-js": "^2.47.0",
     "dotenv": "^16.4.5",
     "hono": "^4.6.0",
+    "pocketbase": "^0.25.0",
     "zod": "^3.24.0"
   },
   "devDependencies": {

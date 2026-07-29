@@ -1,13 +1,10 @@
-import { createClerkClient, verifyToken } from '@clerk/backend';
 import type { Context, Next } from 'hono';
+import PocketBase from 'pocketbase';
 import { env } from '../config/env.js';
-import { supabase } from '../lib/supabase.js';
-
-export const clerk = createClerkClient({ secretKey: env.CLERK_SECRET_KEY });
 
 export interface AuthUser {
-  id: string; // uuid interno
-  clerkId: string;
+  id: string; // uuid interno = pocketbase record id de "users"
+  authUserId: string; // igual a "id" — users es la propia colección auth
   email: string;
   role: 'owner' | 'vet' | 'admin';
 }
@@ -18,7 +15,7 @@ declare module 'hono' {
   }
 }
 
-/** Verifica el JWT de Clerk (Authorization: Bearer) y carga el usuario interno. */
+/** Verifica el JWT de PocketBase (Authorization: Bearer) y carga el usuario. */
 export async function requireAuth(c: Context, next: Next) {
   const header = c.req.header('Authorization');
   const token = header?.startsWith('Bearer ') ? header.slice(7) : null;
@@ -26,30 +23,22 @@ export async function requireAuth(c: Context, next: Next) {
     return c.json({ success: false, error: 'No autorizado' }, 401);
   }
 
-  let clerkId: string;
+  // Cliente efímero: valida el token del request contra PocketBase sin
+  // interferir con la sesión admin compartida (lib/pocketbase.ts).
+  const client = new PocketBase(env.POCKETBASE_URL);
+  client.authStore.save(token, null);
   try {
-    const payload = await verifyToken(token, { secretKey: env.CLERK_SECRET_KEY });
-    clerkId = payload.sub;
+    const { record } = await client.collection('users').authRefresh();
+    c.set('user', {
+      id: record.id,
+      authUserId: record.id,
+      email: record.email,
+      role: record.role,
+    });
   } catch {
     return c.json({ success: false, error: 'Token inválido o expirado' }, 401);
   }
 
-  const { data: user, error } = await supabase
-    .from('users')
-    .select('id, clerk_id, email, role')
-    .eq('clerk_id', clerkId)
-    .single();
-
-  if (error || !user) {
-    return c.json({ success: false, error: 'Usuario no registrado' }, 401);
-  }
-
-  c.set('user', {
-    id: user.id,
-    clerkId: user.clerk_id,
-    email: user.email,
-    role: user.role,
-  });
   await next();
 }
 

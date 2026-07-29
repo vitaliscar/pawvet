@@ -5,11 +5,9 @@ const envSchema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().default(3001),
 
-  SUPABASE_URL: z.string().url(),
-  SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
-
-  CLERK_SECRET_KEY: z.string().min(1),
-  CLERK_WEBHOOK_SECRET: z.string().optional(),
+  POCKETBASE_URL: z.string().url(),
+  POCKETBASE_ADMIN_EMAIL: z.string().email(),
+  POCKETBASE_ADMIN_PASSWORD: z.string().min(1),
 
   MEDICAL_DATA_ENCRYPTION_KEY: z
     .string()

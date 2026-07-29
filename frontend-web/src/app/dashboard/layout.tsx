@@ -1,6 +1,7 @@
-import { UserButton } from '@clerk/nextjs';
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { createServerPb } from '@/lib/pocketbase/server';
+import { SignOutButton } from './sign-out-button';
 
 const NAV_ITEMS = [
   { href: '/dashboard', label: 'Resumen' },
@@ -9,7 +10,10 @@ const NAV_ITEMS = [
   { href: '/dashboard/audit', label: 'Auditoría' },
 ] as const;
 
-export default function DashboardLayout({ children }: { children: ReactNode }) {
+export default async function DashboardLayout({ children }: { children: ReactNode }) {
+  const pb = await createServerPb();
+  const user = pb.authStore.isValid ? pb.authStore.record : null;
+
   return (
     <div className="flex min-h-screen">
       <aside className="flex w-60 flex-col border-r border-paw-100 bg-white">
@@ -31,7 +35,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           ))}
         </nav>
         <div className="border-t border-paw-100 px-5 py-4">
-          <UserButton showName />
+          <SignOutButton email={user?.email ?? ''} />
         </div>
       </aside>
       <main className="flex-1 p-8">{children}</main>

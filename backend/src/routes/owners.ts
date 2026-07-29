@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { audit } from '../lib/audit.js';
-import { supabase } from '../lib/supabase.js';
+import { ensureAdminAuth, pb } from '../lib/pocketbase.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const ownerRoutes = new Hono();
@@ -19,14 +19,17 @@ const ownerProfileSchema = z.object({
 });
 
 ownerRoutes.get('/me', async (c) => {
-  const { data, error } = await supabase
-    .from('pet_owners')
-    .select('id, full_name, address, preferred_radius_km, verified, terms_accepted_at, privacy_accepted_at')
-    .eq('user_id', c.get('user').id)
-    .single();
-
-  if (error || !data) return c.json({ success: false, error: 'Perfil no encontrado' }, 404);
-  return c.json({ success: true, data });
+  await ensureAdminAuth();
+  try {
+    const data = await pb
+      .collection('pet_owners')
+      .getFirstListItem(`user_id = "${c.get('user').id}"`, {
+        fields: 'id,full_name,address,preferred_radius_km,verified,terms_accepted_at,privacy_accepted_at',
+      });
+    return c.json({ success: true, data });
+  } catch {
+    return c.json({ success: false, error: 'Perfil no encontrado' }, 404);
+  }
 });
 
 ownerRoutes.put('/me', async (c) => {
@@ -37,29 +40,26 @@ ownerRoutes.put('/me', async (c) => {
       400,
     );
   }
-  const { lat, lon, terms_accepted, privacy_accepted, ...fields } = parsed.data;
+  const { terms_accepted, privacy_accepted, ...fields } = parsed.data;
   const now = new Date().toISOString();
 
-  const record: Record<string, unknown> = {
-    ...fields,
-    user_id: c.get('user').id,
-    location:
-      lat !== undefined && lon !== undefined ? `SRID=4326;POINT(${lon} ${lat})` : null,
-  };
+  const record: Record<string, unknown> = { ...fields, user_id: c.get('user').id };
   if (terms_accepted) record.terms_accepted_at = now;
   if (privacy_accepted) record.privacy_accepted_at = now;
 
-  const { data, error } = await supabase
-    .from('pet_owners')
-    .upsert(record, { onConflict: 'user_id' })
-    .select('id')
-    .single();
-
-  if (error) {
-    console.error('[owners] upsert error:', error.message);
+  await ensureAdminAuth();
+  try {
+    let owner;
+    try {
+      owner = await pb.collection('pet_owners').getFirstListItem(`user_id = "${c.get('user').id}"`);
+      owner = await pb.collection('pet_owners').update(owner.id, record);
+    } catch {
+      owner = await pb.collection('pet_owners').create(record);
+    }
+    await audit(c, { action: 'owner.profile.update', resourceType: 'pet_owner', resourceId: owner.id });
+    return c.json({ success: true, data: { id: owner.id } });
+  } catch (err) {
+    console.error('[owners] upsert error:', err);
     return c.json({ success: false, error: 'Error al guardar perfil' }, 500);
   }
-
-  await audit(c, { action: 'owner.profile.update', resourceType: 'pet_owner', resourceId: data.id });
-  return c.json({ success: true, data });
 });

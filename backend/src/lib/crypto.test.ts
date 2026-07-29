@@ -3,9 +3,9 @@ import { beforeAll, describe, expect, it } from 'vitest';
 // Clave de test — 32 bytes hex. Debe setearse antes de importar el módulo.
 beforeAll(() => {
   process.env.MEDICAL_DATA_ENCRYPTION_KEY = 'a'.repeat(64);
-  process.env.SUPABASE_URL = 'https://test.supabase.co';
-  process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-key';
-  process.env.CLERK_SECRET_KEY = 'sk_test_x';
+  process.env.POCKETBASE_URL = 'http://127.0.0.1:8090';
+  process.env.POCKETBASE_ADMIN_EMAIL = 'admin@test.pawvet.net';
+  process.env.POCKETBASE_ADMIN_PASSWORD = 'test-password';
   process.env.TRANSBANK_COMMERCE_CODE = 'test';
   process.env.TRANSBANK_API_KEY = 'test';
 });

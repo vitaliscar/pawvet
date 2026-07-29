@@ -1,4 +1,3 @@
-import { useAuth } from '@clerk/clerk-expo';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import * as Location from 'expo-location';
 import { useCallback, useEffect, useState } from 'react';
@@ -6,13 +5,13 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import MapView, { Marker } from 'react-native-maps';
 import type { RootStackParamList } from '../../App';
 import { apiFetch, type NearbyVet } from '../lib/api';
+import { pb } from '../lib/pocketbase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'Home'>;
 
 const RADIUS_OPTIONS = [5, 10, 20, 50] as const;
 
 export function HomeScreen({ navigation }: Props) {
-  const { getToken } = useAuth();
   const [region, setRegion] = useState({
     latitude: -33.4489, // Santiago fallback
     longitude: -70.6693,
@@ -23,22 +22,18 @@ export function HomeScreen({ navigation }: Props) {
   const [vets, setVets] = useState<NearbyVet[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  const searchVets = useCallback(
-    async (lat: number, lon: number, radius: number) => {
-      const token = await getToken();
-      const res = await apiFetch<NearbyVet[]>(
-        `/api/search/vets?lat=${lat}&lon=${lon}&radius_km=${radius}`,
-        token,
-      );
-      if (res.success && res.data) {
-        setVets(res.data);
-        setError(null);
-      } else {
-        setError(res.error ?? 'Error al buscar veterinarios');
-      }
-    },
-    [getToken],
-  );
+  const searchVets = useCallback(async (lat: number, lon: number, radius: number) => {
+    const res = await apiFetch<NearbyVet[]>(
+      `/api/search/vets?lat=${lat}&lon=${lon}&radius_km=${radius}`,
+      pb.authStore.isValid ? pb.authStore.token : null,
+    );
+    if (res.success && res.data) {
+      setVets(res.data);
+      setError(null);
+    } else {
+      setError(res.error ?? 'Error al buscar veterinarios');
+    }
+  }, []);
 
   useEffect(() => {
     (async () => {
