@@ -8,7 +8,8 @@ La especificación completa vive en `docs/` — este archivo resume lo operativo
 - `backend/` — API Hono + TypeScript (puerto 3001). Entry: `src/index.ts`.
 - `frontend-web/` — Next.js 14 App Router (admin dashboard). Puerto 3000.
 - `mobile/` — Expo React Native.
-- `supabase/migrations/` — schema SQL numerado. Ejecutar en orden.
+- `pocketbase/` — schema (`pb_schema.json`) y hooks (`pb_hooks/`) del backend PocketBase.
+- `supabase/migrations/` — **deprecado**, ver `supabase/migrations/README.md`.
 - `infra/` — docker-compose + nginx.
 
 ## Comandos
@@ -26,8 +27,9 @@ cd mobile && npx expo start      # Expo
 1. **Seguridad primero.** Datos médicos siempre encriptados con `backend/src/lib/crypto.ts`
    (AES-256-GCM) antes de persistir. Nunca guardar números de tarjeta — solo
    `transbank_transaction_id`, monto y estado.
-2. **RLS obligatorio.** Toda tabla nueva necesita policies en una migración.
-   El backend usa `service_role` y DEBE filtrar por usuario autenticado.
+2. **API rules obligatorias.** Toda colección nueva de PocketBase necesita
+   `listRule`/`viewRule`/`createRule`/`updateRule`/`deleteRule` en `pocketbase/pb_schema.json`.
+   El backend usa el cliente admin/superuser y DEBE filtrar por usuario autenticado.
 3. **Validación con Zod** en todo endpoint. Nunca confiar en input del cliente.
 4. **No secrets en código.** Solo `.env` (validado en `backend/src/config/env.ts`).
 5. **TypeScript strict**, funciones < 50 líneas, archivos < 800 líneas.

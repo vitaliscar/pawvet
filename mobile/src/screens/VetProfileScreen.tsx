@@ -1,9 +1,9 @@
-import { useAuth } from '@clerk/clerk-expo';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useEffect, useState } from 'react';
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import type { RootStackParamList } from '../../App';
 import { apiFetch } from '../lib/api';
+import { pb } from '../lib/pocketbase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'VetProfile'>;
 
@@ -28,18 +28,19 @@ interface VetProfile {
 const WEEKDAYS = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
 
 export function VetProfileScreen({ route }: Props) {
-  const { getToken } = useAuth();
   const [vet, setVet] = useState<VetProfile | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     (async () => {
-      const token = await getToken();
-      const res = await apiFetch<VetProfile>(`/api/vets/${route.params.vetId}`, token);
+      const res = await apiFetch<VetProfile>(
+        `/api/vets/${route.params.vetId}`,
+        pb.authStore.isValid ? pb.authStore.token : null,
+      );
       if (res.success && res.data) setVet(res.data);
       else setError(res.error ?? 'Error al cargar perfil');
     })();
-  }, [route.params.vetId, getToken]);
+  }, [route.params.vetId]);
 
   if (error) return <Text style={styles.error}>{error}</Text>;
   if (!vet) return <Text style={styles.loading}>Cargando…</Text>;

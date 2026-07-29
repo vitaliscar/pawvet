@@ -1,11 +1,19 @@
-import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { NextResponse, type NextRequest } from 'next/server';
+import PocketBase from 'pocketbase';
 
-const isProtectedRoute = createRouteMatcher(['/dashboard(.*)']);
+export function middleware(request: NextRequest) {
+  const pb = new PocketBase(process.env.NEXT_PUBLIC_POCKETBASE_URL);
+  pb.authStore.loadFromCookie(request.headers.get('cookie') ?? '');
 
-export default clerkMiddleware(async (auth, req) => {
-  if (isProtectedRoute(req)) await auth.protect();
-});
+  if (!pb.authStore.isValid && request.nextUrl.pathname.startsWith('/dashboard')) {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('next', request.nextUrl.pathname);
+    return NextResponse.redirect(loginUrl);
+  }
+
+  return NextResponse.next();
+}
 
 export const config = {
-  matcher: ['/((?!_next|.*\\..*).*)', '/(api|trpc)(.*)'],
+  matcher: ['/((?!_next|.*\\..*).*)'],
 };

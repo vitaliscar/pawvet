@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { audit } from '../lib/audit.js';
-import { supabase } from '../lib/supabase.js';
+import { ensureAdminAuth, pb } from '../lib/pocketbase.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const vetRoutes = new Hono();
@@ -34,24 +34,44 @@ const availabilitySchema = z.object({
 
 // Perfil público de un vet (verificado)
 vetRoutes.get('/:id', async (c) => {
-  const { data, error } = await supabase
-    .from('veterinarians')
-    .select(
-      'id, full_name, clinic_name, clinic_address, bio, avatar_url, offers_home_visits, offers_clinic_visits, verified',
-    )
-    .eq('id', c.req.param('id'))
-    .eq('verified', true)
-    .single();
+  await ensureAdminAuth();
+  let vet;
+  try {
+    vet = await pb.collection('veterinarians').getOne(c.req.param('id'));
+  } catch {
+    return c.json({ success: false, error: 'Veterinario no encontrado' }, 404);
+  }
+  if (!vet.verified) return c.json({ success: false, error: 'Veterinario no encontrado' }, 404);
 
-  if (error || !data) return c.json({ success: false, error: 'Veterinario no encontrado' }, 404);
+  const appointments = await pb.collection('appointments').getFullList({
+    filter: `vet_id = "${vet.id}" && owner_rating != null`,
+    fields: 'owner_rating',
+  });
+  const rating = appointments.length
+    ? Math.round((appointments.reduce((sum, a) => sum + (a.owner_rating ?? 0), 0) / appointments.length) * 10) / 10
+    : null;
 
-  const { data: rating } = await supabase.rpc('vet_average_rating', { p_vet_id: data.id });
-  const { data: availability } = await supabase
-    .from('vet_availability')
-    .select('weekday, start_time, end_time, service_type, price_clp')
-    .eq('vet_id', data.id);
+  const availability = await pb.collection('vet_availability').getFullList({
+    filter: `vet_id = "${vet.id}"`,
+    fields: 'weekday,start_time,end_time,service_type,price_clp',
+  });
 
-  return c.json({ success: true, data: { ...data, rating, availability: availability ?? [] } });
+  return c.json({
+    success: true,
+    data: {
+      id: vet.id,
+      full_name: vet.full_name,
+      clinic_name: vet.clinic_name,
+      clinic_address: vet.clinic_address,
+      bio: vet.bio,
+      avatar_url: vet.avatar_url,
+      offers_home_visits: vet.offers_home_visits,
+      offers_clinic_visits: vet.offers_clinic_visits,
+      verified: vet.verified,
+      rating,
+      availability,
+    },
+  });
 });
 
 // Crear/actualizar mi perfil de vet (queda pending hasta verificación admin)
@@ -63,29 +83,23 @@ vetRoutes.put('/me/profile', requireRole('vet'), async (c) => {
       400,
     );
   }
-  const { clinic_lat, clinic_lon, ...fields } = parsed.data;
-  const location =
-    clinic_lat !== undefined && clinic_lon !== undefined
-      ? `SRID=4326;POINT(${clinic_lon} ${clinic_lat})`
-      : null;
 
   const userId = c.get('user').id;
-  const { data, error } = await supabase
-    .from('veterinarians')
-    .upsert(
-      { ...fields, user_id: userId, clinic_location: location },
-      { onConflict: 'user_id' },
-    )
-    .select('id, verified')
-    .single();
-
-  if (error) {
-    console.error('[vets] upsert error:', error.message);
+  await ensureAdminAuth();
+  try {
+    let vet;
+    try {
+      vet = await pb.collection('veterinarians').getFirstListItem(`user_id = "${userId}"`);
+      vet = await pb.collection('veterinarians').update(vet.id, parsed.data);
+    } catch {
+      vet = await pb.collection('veterinarians').create({ ...parsed.data, user_id: userId });
+    }
+    await audit(c, { action: 'vet.profile.update', resourceType: 'veterinarian', resourceId: vet.id });
+    return c.json({ success: true, data: { id: vet.id, verified: vet.verified } });
+  } catch (err) {
+    console.error('[vets] upsert error:', err);
     return c.json({ success: false, error: 'Error al guardar perfil' }, 500);
   }
-
-  await audit(c, { action: 'vet.profile.update', resourceType: 'veterinarian', resourceId: data.id });
-  return c.json({ success: true, data });
 });
 
 // Gestionar mi disponibilidad
@@ -98,20 +112,20 @@ vetRoutes.put('/me/availability', requireRole('vet'), async (c) => {
     );
   }
 
-  const { data: vet } = await supabase
-    .from('veterinarians')
-    .select('id')
-    .eq('user_id', c.get('user').id)
-    .single();
-  if (!vet) return c.json({ success: false, error: 'Perfil de vet no encontrado' }, 404);
+  await ensureAdminAuth();
+  let vet;
+  try {
+    vet = await pb.collection('veterinarians').getFirstListItem(`user_id = "${c.get('user').id}"`);
+  } catch {
+    return c.json({ success: false, error: 'Perfil de vet no encontrado' }, 404);
+  }
 
   // Reemplazo completo de disponibilidad (idempotente)
-  await supabase.from('vet_availability').delete().eq('vet_id', vet.id);
-  const { error } = await supabase
-    .from('vet_availability')
-    .insert(parsed.data.map((slot) => ({ ...slot, vet_id: vet.id })));
-
-  if (error) return c.json({ success: false, error: 'Error al guardar disponibilidad' }, 500);
+  const existing = await pb.collection('vet_availability').getFullList({ filter: `vet_id = "${vet.id}"` });
+  await Promise.all(existing.map((slot) => pb.collection('vet_availability').delete(slot.id)));
+  await Promise.all(
+    parsed.data.map((slot) => pb.collection('vet_availability').create({ ...slot, vet_id: vet.id })),
+  );
 
   await audit(c, { action: 'vet.availability.update', resourceType: 'veterinarian', resourceId: vet.id });
   return c.json({ success: true });

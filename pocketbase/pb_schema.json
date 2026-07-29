@@ -1,0 +1,226 @@
+[
+  {
+    "name": "users",
+    "type": "auth",
+    "listRule": "id = @request.auth.id || @request.auth.role = 'admin'",
+    "viewRule": "id = @request.auth.id || @request.auth.role = 'admin'",
+    "createRule": "",
+    "updateRule": "id = @request.auth.id",
+    "deleteRule": "@request.auth.role = 'admin'",
+    "fields": [
+      { "name": "phone", "type": "text", "required": false, "max": 20 },
+      {
+        "name": "role",
+        "type": "select",
+        "required": true,
+        "values": ["owner", "vet", "admin"],
+        "maxSelect": 1
+      }
+    ]
+  },
+  {
+    "name": "pet_owners",
+    "type": "base",
+    "listRule": "user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "viewRule": "user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "createRule": "user_id = @request.auth.id",
+    "updateRule": "user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "deleteRule": "@request.auth.role = 'admin'",
+    "fields": [
+      { "name": "user_id", "type": "relation", "required": true, "collectionId": "users", "maxSelect": 1 },
+      { "name": "full_name", "type": "text", "required": true, "max": 200 },
+      { "name": "address", "type": "text", "max": 300 },
+      { "name": "lat", "type": "number" },
+      { "name": "lon", "type": "number" },
+      { "name": "preferred_radius_km", "type": "number", "required": true },
+      { "name": "verified", "type": "bool" },
+      { "name": "terms_accepted_at", "type": "date" },
+      { "name": "privacy_accepted_at", "type": "date" }
+    ]
+  },
+  {
+    "name": "veterinarians",
+    "type": "base",
+    "listRule": "verified = true || user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "viewRule": "verified = true || user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "createRule": "user_id = @request.auth.id",
+    "updateRule": "user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "deleteRule": "@request.auth.role = 'admin'",
+    "fields": [
+      { "name": "user_id", "type": "relation", "required": true, "collectionId": "users", "maxSelect": 1 },
+      { "name": "full_name", "type": "text", "required": true, "max": 200 },
+      { "name": "rut", "type": "text", "required": true },
+      { "name": "license_number", "type": "text", "required": true },
+      { "name": "clinic_name", "type": "text", "max": 200 },
+      { "name": "clinic_address", "type": "text", "max": 300 },
+      { "name": "clinic_lat", "type": "number" },
+      { "name": "clinic_lon", "type": "number" },
+      { "name": "bio", "type": "text", "max": 2000 },
+      { "name": "avatar_url", "type": "url" },
+      { "name": "phone", "type": "text", "max": 20 },
+      { "name": "verified", "type": "bool" },
+      { "name": "rut_document_url", "type": "url" },
+      { "name": "license_document_url", "type": "url" },
+      { "name": "verified_by_admin_id", "type": "relation", "collectionId": "users", "maxSelect": 1 },
+      { "name": "verified_at", "type": "date" },
+      {
+        "name": "subscription_status",
+        "type": "select",
+        "values": ["active", "cancelled", "expired"],
+        "maxSelect": 1
+      },
+      {
+        "name": "subscription_plan",
+        "type": "select",
+        "values": ["basic", "pro", "premium"],
+        "maxSelect": 1
+      },
+      { "name": "subscription_start", "type": "date" },
+      { "name": "subscription_end", "type": "date" },
+      { "name": "offers_home_visits", "type": "bool" },
+      { "name": "offers_clinic_visits", "type": "bool" },
+      { "name": "independent_contractor_agreement_signed", "type": "bool" },
+      { "name": "agreement_signed_at", "type": "date" },
+      { "name": "has_liability_insurance", "type": "bool" },
+      { "name": "insurance_expiry", "type": "date" }
+    ]
+  },
+  {
+    "name": "pets",
+    "type": "base",
+    "listRule": "owner_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "viewRule": "owner_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "createRule": "owner_id.user_id = @request.auth.id",
+    "updateRule": "owner_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "deleteRule": "owner_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "fields": [
+      { "name": "owner_id", "type": "relation", "required": true, "collectionId": "pet_owners", "maxSelect": 1 },
+      { "name": "name", "type": "text", "required": true, "max": 100 },
+      {
+        "name": "species",
+        "type": "select",
+        "required": true,
+        "values": ["dog", "cat", "bird", "rabbit", "other"],
+        "maxSelect": 1
+      },
+      { "name": "breed", "type": "text", "max": 100 },
+      { "name": "age_years", "type": "number" },
+      { "name": "medical_history_enc", "type": "text", "max": 40000 },
+      { "name": "photo_url", "type": "url" }
+    ]
+  },
+  {
+    "name": "vet_availability",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": "vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "updateRule": "vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "deleteRule": "vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "fields": [
+      { "name": "vet_id", "type": "relation", "required": true, "collectionId": "veterinarians", "maxSelect": 1 },
+      { "name": "weekday", "type": "number", "required": true },
+      { "name": "start_time", "type": "text", "required": true },
+      { "name": "end_time", "type": "text", "required": true },
+      {
+        "name": "service_type",
+        "type": "select",
+        "required": true,
+        "values": ["home_visit", "clinic_visit"],
+        "maxSelect": 1
+      },
+      { "name": "price_clp", "type": "number", "required": true }
+    ]
+  },
+  {
+    "name": "appointments",
+    "type": "base",
+    "listRule": "owner_id.user_id = @request.auth.id || vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "viewRule": "owner_id.user_id = @request.auth.id || vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "createRule": "owner_id.user_id = @request.auth.id",
+    "updateRule": "owner_id.user_id = @request.auth.id || vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "deleteRule": "@request.auth.role = 'admin'",
+    "fields": [
+      { "name": "pet_id", "type": "relation", "required": true, "collectionId": "pets", "maxSelect": 1 },
+      { "name": "vet_id", "type": "relation", "required": true, "collectionId": "veterinarians", "maxSelect": 1 },
+      { "name": "owner_id", "type": "relation", "required": true, "collectionId": "pet_owners", "maxSelect": 1 },
+      {
+        "name": "service_type",
+        "type": "select",
+        "required": true,
+        "values": ["home_visit", "clinic_visit"],
+        "maxSelect": 1
+      },
+      { "name": "service_lat", "type": "number" },
+      { "name": "service_lon", "type": "number" },
+      { "name": "distance_km", "type": "number" },
+      { "name": "scheduled_date", "type": "text", "required": true },
+      { "name": "scheduled_time", "type": "text", "required": true },
+      { "name": "actual_date", "type": "date" },
+      { "name": "price_clp", "type": "number" },
+      {
+        "name": "status",
+        "type": "select",
+        "required": true,
+        "values": ["pending", "confirmed", "completed", "cancelled"],
+        "maxSelect": 1
+      },
+      { "name": "vet_notes_enc", "type": "text", "max": 40000 },
+      { "name": "diagnosis_enc", "type": "text", "max": 40000 },
+      { "name": "treatment_enc", "type": "text", "max": 40000 },
+      { "name": "medications_enc", "type": "text", "max": 40000 },
+      { "name": "follow_up_required", "type": "bool" },
+      { "name": "owner_rating", "type": "number" },
+      { "name": "owner_review", "type": "text" },
+      { "name": "vet_rating", "type": "number" }
+    ]
+  },
+  {
+    "name": "subscriptions",
+    "type": "base",
+    "listRule": "vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "viewRule": "vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      { "name": "vet_id", "type": "relation", "required": true, "collectionId": "veterinarians", "maxSelect": 1 },
+      {
+        "name": "plan",
+        "type": "select",
+        "required": true,
+        "values": ["basic", "pro", "premium"],
+        "maxSelect": 1
+      },
+      { "name": "price_clp", "type": "number", "required": true },
+      { "name": "transbank_transaction_id", "type": "text" },
+      {
+        "name": "status",
+        "type": "select",
+        "required": true,
+        "values": ["active", "cancelled", "expired"],
+        "maxSelect": 1
+      },
+      { "name": "start_date", "type": "date", "required": true },
+      { "name": "end_date", "type": "date" },
+      { "name": "auto_renew", "type": "bool" }
+    ]
+  },
+  {
+    "name": "audit_logs",
+    "type": "base",
+    "listRule": "@request.auth.role = 'admin'",
+    "viewRule": "@request.auth.role = 'admin'",
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      { "name": "user_id", "type": "relation", "collectionId": "users", "maxSelect": 1 },
+      { "name": "action", "type": "text", "required": true },
+      { "name": "resource_type", "type": "text" },
+      { "name": "resource_id", "type": "text" },
+      { "name": "details", "type": "json" },
+      { "name": "ip_address", "type": "text" }
+    ]
+  }
+]

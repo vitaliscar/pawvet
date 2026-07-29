@@ -1,4 +1,3 @@
-import { useSignIn } from '@clerk/clerk-expo';
 import type { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { useState } from 'react';
 import {
@@ -11,34 +10,30 @@ import {
   View,
 } from 'react-native';
 import type { RootStackParamList } from '../../App';
+import { pb } from '../lib/pocketbase';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'SignIn'>;
 
 export function SignInScreen({ navigation }: Props) {
-  const { signIn, setActive, isLoaded } = useSignIn();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [isBusy, setIsBusy] = useState(false);
 
   async function handleSignIn() {
-    if (!isLoaded || isBusy) return;
+    if (isBusy) return;
     setIsBusy(true);
     setError(null);
     try {
-      const result = await signIn.create({ identifier: email, password });
-      if (result.status === 'complete') {
-        await setActive({ session: result.createdSessionId });
-        navigation.replace('Home');
-      } else {
-        // TODO(FASE 3): flujo 2FA obligatorio para vets
-        setError('Se requiere verificación adicional.');
-      }
+      await pb.collection('users').authWithPassword(email, password);
     } catch {
       setError('Credenciales inválidas.');
-    } finally {
       setIsBusy(false);
+      return;
     }
+    setIsBusy(false);
+    // TODO(FASE 3): flujo 2FA obligatorio para vets
+    navigation.replace('Home');
   }
 
   return (

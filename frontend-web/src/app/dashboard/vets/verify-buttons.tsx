@@ -1,13 +1,12 @@
 'use client';
 
-import { useAuth } from '@clerk/nextjs';
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { createClientPb } from '@/lib/pocketbase/client';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
 export function VerifyButtons({ vetId }: { vetId: string }) {
-  const { getToken } = useAuth();
   const router = useRouter();
   const [isBusy, setIsBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -16,12 +15,12 @@ export function VerifyButtons({ vetId }: { vetId: string }) {
     setIsBusy(true);
     setError(null);
     try {
-      const token = await getToken();
+      const pb = createClientPb();
       const res = await fetch(`${API_URL}/api/admin/vets/${vetId}/verify`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`,
+          Authorization: `Bearer ${pb.authStore.token}`,
         },
         body: JSON.stringify({ approved }),
       });

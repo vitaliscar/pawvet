@@ -1,4 +1,4 @@
-import { auth } from '@clerk/nextjs/server';
+import { createServerPb } from './pocketbase/server';
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:3001';
 
@@ -9,13 +9,13 @@ interface ApiResponse<T> {
   meta?: { total: number | null; page: number; limit: number };
 }
 
-/** Fetch server-side contra la API PAWVET con el JWT de Clerk. */
+/** Fetch server-side contra la API PAWVET con el JWT de sesión de PocketBase. */
 export async function apiFetch<T>(
   path: string,
   init?: RequestInit,
 ): Promise<ApiResponse<T>> {
-  const { getToken } = await auth();
-  const token = await getToken();
+  const pb = await createServerPb();
+  const token = pb.authStore.isValid ? pb.authStore.token : null;
 
   const res = await fetch(`${API_URL}${path}`, {
     ...init,
