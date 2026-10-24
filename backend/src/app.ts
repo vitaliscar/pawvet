@@ -20,9 +20,10 @@ app.use(
   '*',
   cors({
     origin:
-      env.NODE_ENV === 'production'
+      env.CORS_ORIGINS ??
+      (env.NODE_ENV === 'production'
         ? ['https://pawvet.net', 'https://www.pawvet.net', 'https://admin.pawvet.net']
-        : ['http://localhost:3000'],
+        : ['http://localhost:3000']),
     allowHeaders: ['Authorization', 'Content-Type'],
   }),
 );

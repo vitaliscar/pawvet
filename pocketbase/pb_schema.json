@@ -125,7 +125,7 @@
     "deleteRule": null,
     "fields": [
       { "name": "vet_id", "type": "relation", "required": true, "collectionId": "veterinarians", "maxSelect": 1 },
-      { "name": "weekday", "type": "number", "required": true },
+      { "name": "weekday", "type": "number", "min": 0, "max": 6, "onlyInt": true },
       { "name": "start_time", "type": "text", "required": true },
       { "name": "end_time", "type": "text", "required": true },
       {
@@ -135,7 +135,7 @@
         "values": ["home_visit", "clinic_visit"],
         "maxSelect": 1
       },
-      { "name": "price_clp", "type": "number", "required": true },
+      { "name": "price_clp", "type": "number" },
       { "name": "created", "type": "autodate", "onCreate": true },
       { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
     ]

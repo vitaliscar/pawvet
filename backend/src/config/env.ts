@@ -20,6 +20,12 @@ const envSchema = z.object({
   GOOGLE_MAPS_API_KEY: z.string().optional(),
   SENDGRID_API_KEY: z.string().optional(),
   EMAIL_FROM: z.string().email().default('noreply@pawvet.net'),
+
+  // Orígenes CORS separados por coma; si falta, se usan los de app.ts según NODE_ENV.
+  CORS_ORIGINS: z
+    .string()
+    .optional()
+    .transform((v) => v?.split(',').map((o) => o.trim()).filter(Boolean)),
 });
 
 const parsed = envSchema.safeParse(process.env);

@@ -138,14 +138,30 @@ appointmentRoutes.get('/', async (c) => {
     filter = pb.filter(`${field} = {:profileId}`, { profileId });
   }
 
-  const data = await pb.collection('appointments').getFullList({
+  const data = await pb.collection('appointments').getList(1, 100, {
     filter,
-    sort: '-scheduled_date',
-    fields:
-      'id,pet_id,vet_id,owner_id,service_id,service_type,scheduled_date,scheduled_time,price_clp,status,distance_km,owner_rating,created',
+    sort: '-scheduled_date,-scheduled_time',
+    expand: 'pet_id,service_id,owner_id,vet_id',
+    fields: [
+      'id,pet_id,vet_id,owner_id,service_id,service_type,scheduled_date,scheduled_time',
+      'price_clp,status,distance_km,owner_rating,cancel_reason,created',
+      'expand.pet_id.name,expand.pet_id.species,expand.service_id.kind',
+      'expand.owner_id.full_name,expand.owner_id.address,expand.vet_id.full_name',
+    ].join(','),
     requestKey: null,
   });
-  return c.json({ success: true, data: data.slice(0, 100) });
+
+  // Aplana las relaciones; la dirección solo se entrega a quien atiende o administra.
+  const items = data.items.map(({ expand, ...a }) => ({
+    ...a,
+    pet_name: expand?.pet_id?.name ?? null,
+    pet_species: expand?.pet_id?.species ?? null,
+    service_kind: expand?.service_id?.kind ?? null,
+    owner_name: expand?.owner_id?.full_name ?? null,
+    address: user.role === 'owner' ? null : (expand?.owner_id?.address ?? null),
+    vet_name: expand?.vet_id?.full_name ?? null,
+  }));
+  return c.json({ success: true, data: items });
 });
 
 // Crear cita (solo dueño). El índice único (vet, fecha, hora) de PocketBase

@@ -31,9 +31,8 @@ const availabilitySchema = z.object({
   start_time: z.string().regex(/^\d{2}:\d{2}$/),
   end_time: z.string().regex(/^\d{2}:\d{2}$/),
   service_type: z.enum(['home_visit', 'clinic_visit']),
-  // ponytail: campo heredado (el precio de la cita sale de vet_services); PocketBase
-  // lo exige y trata 0 como vacío. Quitarlo del esquema en una migración futura.
-  price_clp: z.number().int().positive(),
+  // Heredado: el precio de la cita sale de vet_services (migración 1761264004 lo hizo opcional).
+  price_clp: z.number().int().min(0).optional(),
 });
 
 const serviceSchema = z.object({
@@ -47,6 +46,35 @@ const serviceSchema = z.object({
 const slotsQuerySchema = z.object({
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
   service_type: z.enum(['home_visit', 'clinic_visit']).default('home_visit'),
+});
+
+// Mi perfil de vet con catálogo completo y disponibilidad (registrar antes de /:id)
+vetRoutes.get('/me', requireRole('vet'), async (c) => {
+  await ensureAdminAuth();
+  let vet;
+  try {
+    vet = await pb
+      .collection('veterinarians')
+      .getFirstListItem(pb.filter('user_id = {:userId}', { userId: c.get('user').id }));
+  } catch {
+    return c.json({ success: false, error: 'Perfil de vet no encontrado' }, 404);
+  }
+  const byVet = pb.filter('vet_id = {:vetId}', { vetId: vet.id });
+  const [services, availability] = await Promise.all([
+    pb.collection('vet_services').getFullList({
+      filter: byVet,
+      fields: 'id,kind,duration_min,price_clp,home_visit_fee_clp,active',
+    }),
+    pb.collection('vet_availability').getFullList({
+      filter: byVet,
+      sort: 'weekday,start_time',
+      fields: 'weekday,start_time,end_time,service_type',
+    }),
+  ]);
+  return c.json({
+    success: true,
+    data: { id: vet.id, full_name: vet.full_name, verified: vet.verified, services, availability },
+  });
 });
 
 // Perfil público de un vet (verificado)
