@@ -1,6 +1,6 @@
 # PAWVET — Atención veterinaria a domicilio
 
-Proyecto en Fase 1: API, base PocketBase y panel administrativo. La portada presenta el servicio; la reserva pública y el pago todavía no están habilitados.
+Proyecto en Fase 1: API, base PocketBase y panel administrativo. La portada presenta el servicio; la reserva pública todavía no está habilitada. El piloto propuesto (dos comunas, cuatro servicios, pago directo al veterinario) está en `docs/PILOTO.md`.
 
 ## Estructura del Monorepo
 
@@ -24,7 +24,7 @@ pawvet/
 | Web | Next.js 14 + TypeScript + Tailwind |
 | API | Node.js + Hono + TypeScript + Zod |
 | BD y Auth | PocketBase 0.40.6 (SQLite, reglas por colección) |
-| Pagos | Transbank WebPay (integración pendiente) |
+| Pagos | Fuera del piloto: el tutor paga al veterinario. Transbank WebPay después |
 | Email | SendGrid |
 | Push | Firebase Cloud Messaging |
 | Hosting | Hetzner VPS + Docker + Nginx + Cloudflare |
@@ -55,10 +55,12 @@ En producción, infra/docker-compose.yml levanta PocketBase, API, web y Nginx. R
 - El rol admin se asigna desde una cuenta superusuario.
 - Datos de tarjetas: SOLO Transbank — nunca se almacenan aquí
 - Auditoría en la colección audit_logs.
+- Doble reserva imposible: índice único de PocketBase por veterinario, fecha y hora (citas no canceladas).
 - Nunca commitear secrets: todo va en `.env` (ver `.env.example`)
 
 ## Documentación
 
+- docs/PILOTO.md — propuesta de alcance del piloto y flujo de reserva (pendiente de aprobación)
 - docs/ESTADO-ACTUAL.md — estado del código y pendientes conocidos
 - docs/MODELO-NEGOCIO-REFERENTES.md — investigación de referentes
 - docs/CLAUDE.md — plan histórico; algunas referencias de stack están desactualizadas

@@ -9,12 +9,18 @@ El directorio aún no tiene .git. El código usa PocketBase; Supabase y Clerk ap
 - La portada web presenta PAWVET con identidad propia y comunica que la reserva aún está en preparación. API y web compilan.
 - Docker Compose incluye PocketBase persistente, API, web y Nginx. La configuración pasa docker compose config; el daemon Docker no estaba disponible para probar la imagen.
 
+## Resuelto
+
+- Filtros de auditoría escapados con `pb.filter`; rutas de dueños/mascotas solo para rol owner; el panel lee `created`.
+- Motor de citas: catálogo `vet_services`, grilla de 60 min, precio con traslado, máquina de estados y cancelación con motivo. Índices únicos impiden doble cupo y reservas duplicadas por reintento (verificado: dos reservas simultáneas → 201 y 409).
+- Búsqueda y reserva ya no exigen suscripción (fuera del piloto).
+
 ## Pendientes prioritarios
 
-1. Escapar los filtros de auditoría en backend/src/routes/admin.ts. La ruta exige admin, pero parámetros maliciosos pueden alterar el filtro.
-2. Completar citas: disponibilidad, prevención de doble reserva, precio y transiciones de estado. La reserva pública no debe abrirse antes.
-3. Corregir la fecha de auditoría en la web: el panel lee created_at y PocketBase entrega created. Completar métricas pendientes del panel.
-4. Corregir roles inconsistentes en rutas de dueños/mascotas y las coordenadas de marcadores en móvil.
+1. Aprobar el alcance del piloto en [PILOTO.md](PILOTO.md): comunas, plazo de cancelación y regla de cobertura.
+2. Completar métricas del panel admin y un panel mínimo para veterinarios (servicios, agenda, notas clínicas).
+3. Construir la reserva web para tutores contra la API real.
+4. Corregir las coordenadas de marcadores en móvil y completar «Agendar».
 5. Probar contenedores y certificados TLS cuando Docker esté disponible. Revisar el plan histórico en docs/CLAUDE.md antes de usarlo como guía.
 
 La comparación de servicios y el modelo de piloto están en [MODELO-NEGOCIO-REFERENTES.md](MODELO-NEGOCIO-REFERENTES.md).
