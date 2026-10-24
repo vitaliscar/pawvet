@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "PAWVET",
+    "slug": "pawvet",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "scheme": "pawvet",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "bundleIdentifier": "net.pawvet.app",
+      "supportsTablet": false,
+      "infoPlist": {
+        "NSLocationWhenInUseUsageDescription": "PAWVET usa tu ubicación para encontrar veterinarios cercanos."
+      }
+    },
+    "android": {
+      "package": "net.pawvet.app",
+      "permissions": ["ACCESS_FINE_LOCATION"]
+    },
+    "plugins": ["expo-location", "expo-secure-store"]
+  }
+}

@@ -1,0 +1,78 @@
+# PAWVET — Producción en Hetzner VPS
+# Uso: docker compose --env-file ../backend/.env up -d
+services:
+  pocketbase:
+    build:
+      context: ../pocketbase
+    container_name: pawvet-pocketbase
+    restart: unless-stopped
+    volumes:
+      - pocketbase_data:/pb/pb_data
+    ports:
+      - "127.0.0.1:8090:8090"
+    networks:
+      - pawvet
+
+  api:
+    build:
+      context: ../backend
+    container_name: pawvet-api
+    restart: unless-stopped
+    env_file:
+      - ../backend/.env
+    environment:
+      NODE_ENV: production
+      POCKETBASE_URL: http://pocketbase:8090
+    expose:
+      - "3001"
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost:3001/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - pawvet
+    depends_on:
+      - pocketbase
+
+  web:
+    build:
+      context: ../frontend-web
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_POCKETBASE_URL: ${NEXT_PUBLIC_POCKETBASE_URL:-https://api.pawvet.net/pb}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.pawvet.net}
+    container_name: pawvet-web
+    restart: unless-stopped
+    environment:
+      API_URL: http://api:3001
+      NEXT_PUBLIC_POCKETBASE_URL: ${NEXT_PUBLIC_POCKETBASE_URL:-https://api.pawvet.net/pb}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-https://api.pawvet.net}
+    expose:
+      - "3000"
+    networks:
+      - pawvet
+
+  nginx:
+    image: nginx:1.27-alpine
+    container_name: pawvet-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/pawvet.conf:/etc/nginx/conf.d/default.conf:ro
+      - /etc/letsencrypt:/etc/letsencrypt:ro
+    depends_on:
+      - api
+      - web
+      - pocketbase
+    networks:
+      - pawvet
+
+volumes:
+  pocketbase_data:
+
+networks:
+  pawvet:
+    driver: bridge
