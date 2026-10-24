@@ -42,7 +42,7 @@ function AppointmentCard({ appt }: { appt: AgendaItem }) {
     <li className="rounded-xl border border-paw-100 bg-white p-5">
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-sm font-medium capitalize text-ink/70">{formatDate(appt.scheduled_date)}</p>
+          <p className="text-sm font-medium text-ink/70">{formatDate(appt.scheduled_date)}</p>
           <p className="text-3xl font-bold tabular-nums text-paw-900">{appt.scheduled_time}</p>
         </div>
         <span className={`rounded-full px-3 py-1 text-xs font-semibold ${STATUS_STYLE[appt.status]}`}>
@@ -56,7 +56,7 @@ function AppointmentCard({ appt }: { appt: AgendaItem }) {
         {appt.owner_name ?? 'Tutor'} · {formatClp(appt.price_clp)}
       </p>
       {mapsUrl && (
-        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-1 inline-block text-sm text-paw-700 underline">
+        <a href={mapsUrl} target="_blank" rel="noopener noreferrer" className="mt-1 block w-fit text-sm text-paw-700 underline">
           {appt.address}
         </a>
       )}
@@ -65,7 +65,7 @@ function AppointmentCard({ appt }: { appt: AgendaItem }) {
       )}
       <AppointmentActions id={appt.id} status={appt.status} />
       {appt.status !== 'cancelled' && (
-        <Link href={`/vet/citas/${appt.id}`} className="mt-3 inline-block text-sm font-semibold text-paw-700 hover:underline">
+        <Link href={`/vet/citas/${appt.id}`} className="mt-3 block w-fit text-sm font-semibold text-paw-700 hover:underline">
           Notas clínicas →
         </Link>
       )}
@@ -90,7 +90,7 @@ export default async function VetAgendaPage() {
         </h2>
         {upcoming.length === 0 ? (
           <p className="mt-3 rounded-xl border border-dashed border-paw-100 bg-white p-6 text-sm text-ink/70">
-            Aún no tienes citas. Revisa que tus <Link href="/vet/servicios" className="font-semibold text-paw-700 underline">servicios</Link> y tu{' '}
+            No tienes citas próximas. Revisa que tus <Link href="/vet/servicios" className="font-semibold text-paw-700 underline">servicios</Link> y tu{' '}
             <Link href="/vet/disponibilidad" className="font-semibold text-paw-700 underline">disponibilidad</Link> estén publicados.
           </p>
         ) : (

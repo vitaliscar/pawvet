@@ -26,10 +26,12 @@ export const formatClp = (value: number | null | undefined): string =>
 
 /** 'YYYY-MM-DD' → 'lunes 7 de enero' sin desfase de zona horaria. */
 export function formatDate(date: string): string {
-  return new Date(`${date}T12:00:00Z`).toLocaleDateString('es-CL', {
+  const text = new Date(`${date}T12:00:00Z`).toLocaleDateString('es-CL', {
     weekday: 'long',
     day: 'numeric',
     month: 'long',
     timeZone: 'UTC',
   });
+  // Solo la primera letra: en español los meses van en minúscula.
+  return text.charAt(0).toUpperCase() + text.slice(1);
 }
