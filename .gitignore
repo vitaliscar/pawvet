@@ -45,3 +45,6 @@ pocketbase/pocketbase
 .npm-cache/
 .docker-config/
 infra/admin.local.txt
+
+# Capturas y logs de pruebas de navegador (Playwright MCP)
+.playwright-mcp/
