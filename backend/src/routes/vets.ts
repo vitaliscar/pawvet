@@ -1,6 +1,8 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
+import type { RecordModel } from 'pocketbase';
 import { audit } from '../lib/audit.js';
+import { availableSlots, SLOT_MINUTES, type AvailabilityWindow } from '../lib/booking.js';
 import { ensureAdminAuth, pb } from '../lib/pocketbase.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -29,7 +31,22 @@ const availabilitySchema = z.object({
   start_time: z.string().regex(/^\d{2}:\d{2}$/),
   end_time: z.string().regex(/^\d{2}:\d{2}$/),
   service_type: z.enum(['home_visit', 'clinic_visit']),
+  // ponytail: campo heredado (el precio de la cita sale de vet_services); PocketBase
+  // lo exige y trata 0 como vacío. Quitarlo del esquema en una migración futura.
+  price_clp: z.number().int().positive(),
+});
+
+const serviceSchema = z.object({
+  kind: z.enum(['general_consult', 'vaccination', 'deworming', 'wellness_check']),
+  duration_min: z.number().int().min(15).max(SLOT_MINUTES),
   price_clp: z.number().int().min(0),
+  home_visit_fee_clp: z.number().int().min(0).default(0),
+  active: z.boolean().default(true),
+});
+
+const slotsQuerySchema = z.object({
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+  service_type: z.enum(['home_visit', 'clinic_visit']).default('home_visit'),
 });
 
 // Perfil público de un vet (verificado)
@@ -56,6 +73,11 @@ vetRoutes.get('/:id', async (c) => {
     fields: 'weekday,start_time,end_time,service_type,price_clp',
   });
 
+  const services = await pb.collection('vet_services').getFullList({
+    filter: `vet_id = "${vet.id}" && active = true`,
+    fields: 'id,kind,duration_min,price_clp,home_visit_fee_clp',
+  });
+
   return c.json({
     success: true,
     data: {
@@ -70,8 +92,34 @@ vetRoutes.get('/:id', async (c) => {
       verified: vet.verified,
       rating,
       availability,
+      services,
     },
   });
+});
+
+// Horarios libres de un vet para una fecha y modalidad
+vetRoutes.get('/:id/slots', async (c) => {
+  const parsed = slotsQuerySchema.safeParse(c.req.query());
+  if (!parsed.success) return c.json({ success: false, error: 'Parámetros inválidos' }, 400);
+  const { date, service_type } = parsed.data;
+  const vetId = c.req.param('id');
+
+  await ensureAdminAuth();
+  const [windows, booked] = await Promise.all([
+    pb.collection('vet_availability').getFullList<AvailabilityWindow & RecordModel>({
+      filter: pb.filter('vet_id = {:vetId} && service_type = {:service_type}', { vetId, service_type }),
+    }),
+    pb.collection('appointments').getFullList({
+      filter: pb.filter("vet_id = {:vetId} && scheduled_date = {:date} && status != 'cancelled'", {
+        vetId,
+        date,
+      }),
+      fields: 'scheduled_time',
+    }),
+  ]);
+
+  const slots = availableSlots(date, windows, booked.map((a) => a.scheduled_time as string));
+  return c.json({ success: true, data: { date, service_type, slot_minutes: SLOT_MINUTES, slots } });
 });
 
 // Crear/actualizar mi perfil de vet (queda pending hasta verificación admin)
@@ -129,4 +177,38 @@ vetRoutes.put('/me/availability', requireRole('vet'), async (c) => {
 
   await audit(c, { action: 'vet.availability.update', resourceType: 'veterinarian', resourceId: vet.id });
   return c.json({ success: true });
+});
+
+// Gestionar mi catálogo de servicios (upsert por tipo; índice único vet_id+kind)
+vetRoutes.put('/me/services', requireRole('vet'), async (c) => {
+  const parsed = z.array(serviceSchema).max(4).safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ success: false, error: 'Datos inválidos', details: parsed.error.flatten() }, 400);
+  }
+
+  await ensureAdminAuth();
+  let vet;
+  try {
+    vet = await pb
+      .collection('veterinarians')
+      .getFirstListItem(pb.filter('user_id = {:userId}', { userId: c.get('user').id }));
+  } catch {
+    return c.json({ success: false, error: 'Perfil de vet no encontrado' }, 404);
+  }
+
+  const existing = await pb.collection('vet_services').getFullList({
+    filter: pb.filter('vet_id = {:vetId}', { vetId: vet.id }),
+  });
+  const byKind = new Map(existing.map((s) => [s.kind as string, s.id]));
+  const saved = await Promise.all(
+    parsed.data.map((service) => {
+      const id = byKind.get(service.kind);
+      return id
+        ? pb.collection('vet_services').update(id, service)
+        : pb.collection('vet_services').create({ ...service, vet_id: vet.id });
+    }),
+  );
+
+  await audit(c, { action: 'vet.services.update', resourceType: 'veterinarian', resourceId: vet.id });
+  return c.json({ success: true, data: saved.map((s) => ({ id: s.id, kind: s.kind, active: s.active })) });
 });

@@ -141,6 +141,32 @@
     ]
   },
   {
+    "name": "vet_services",
+    "type": "base",
+    "listRule": "",
+    "viewRule": "",
+    "createRule": null,
+    "updateRule": null,
+    "deleteRule": null,
+    "fields": [
+      { "name": "vet_id", "type": "relation", "required": true, "collectionId": "veterinarians", "maxSelect": 1 },
+      {
+        "name": "kind",
+        "type": "select",
+        "required": true,
+        "values": ["general_consult", "vaccination", "deworming", "wellness_check"],
+        "maxSelect": 1
+      },
+      { "name": "duration_min", "type": "number", "required": true },
+      { "name": "price_clp", "type": "number", "required": true },
+      { "name": "home_visit_fee_clp", "type": "number" },
+      { "name": "active", "type": "bool" },
+      { "name": "created", "type": "autodate", "onCreate": true },
+      { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+    ],
+    "indexes": ["CREATE UNIQUE INDEX idx_vet_services_kind ON vet_services (vet_id, kind)"]
+  },
+  {
     "name": "appointments",
     "type": "base",
     "listRule": "owner_id.user_id = @request.auth.id || vet_id.user_id = @request.auth.id || @request.auth.role = 'admin'",
@@ -181,8 +207,15 @@
       { "name": "owner_rating", "type": "number" },
       { "name": "owner_review", "type": "text" },
       { "name": "vet_rating", "type": "number" },
+      { "name": "service_id", "type": "relation", "collectionId": "vet_services", "maxSelect": 1 },
+      { "name": "idempotency_key", "type": "text", "max": 100 },
+      { "name": "cancel_reason", "type": "text", "max": 500 },
       { "name": "created", "type": "autodate", "onCreate": true },
       { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
+    ],
+    "indexes": [
+      "CREATE UNIQUE INDEX idx_appointments_slot ON appointments (vet_id, scheduled_date, scheduled_time) WHERE status != 'cancelled'",
+      "CREATE UNIQUE INDEX idx_appointments_idempotency ON appointments (owner_id, idempotency_key) WHERE idempotency_key != ''"
     ]
   },
   {

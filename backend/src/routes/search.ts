@@ -40,7 +40,8 @@ searchRoutes.get('/vets', requireAuth, async (c) => {
   try {
     await ensureAdminAuth();
     const vets = await pb.collection('veterinarians').getFullList<VetRecord>({
-      filter: "verified = true && subscription_status = 'active'",
+      // Piloto sin suscripciones: basta con estar verificado por un admin.
+      filter: 'verified = true',
     });
 
     const results = vets
