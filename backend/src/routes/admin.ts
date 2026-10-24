@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
 import { audit } from '../lib/audit.js';
+import { nowInChile } from '../lib/booking.js';
 import { ensureAdminAuth, pb } from '../lib/pocketbase.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -77,6 +78,35 @@ adminRoutes.get('/audit-logs', async (c) => {
     success: true,
     data: result.items,
     meta: { total: result.totalItems, page, limit },
+  });
+});
+
+// Métricas del panel (conteos; totalItems evita traer registros)
+adminRoutes.get('/metrics', async (c) => {
+  await ensureAdminAuth();
+  const count = async (collection: string, filter: string) =>
+    (await pb.collection(collection).getList(1, 1, { filter, fields: 'id', requestKey: null })).totalItems;
+  const today = nowInChile().slice(0, 10);
+
+  const [pendingVets, verifiedVets, owners, todayAppointments, pending, confirmed, completed, cancelled] =
+    await Promise.all([
+      count('veterinarians', 'verified = false'),
+      count('veterinarians', 'verified = true'),
+      count('pet_owners', ''),
+      count('appointments', pb.filter("scheduled_date = {:today} && status != 'cancelled'", { today })),
+      count('appointments', "status = 'pending'"),
+      count('appointments', "status = 'confirmed'"),
+      count('appointments', "status = 'completed'"),
+      count('appointments', "status = 'cancelled'"),
+    ]);
+
+  return c.json({
+    success: true,
+    data: {
+      vets: { pending: pendingVets, verified: verifiedVets },
+      owners,
+      appointments: { today: todayAppointments, pending, confirmed, completed, cancelled },
+    },
   });
 });
 
