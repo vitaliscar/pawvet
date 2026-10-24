@@ -7,7 +7,7 @@ interface AuditLog {
   resource_type: string | null;
   resource_id: string | null;
   ip_address: string | null;
-  created_at: string;
+  created: string;
 }
 
 export default async function AuditPage() {
@@ -40,7 +40,7 @@ export default async function AuditPage() {
             {logs.map((log) => (
               <tr key={log.id} className="border-t border-paw-100">
                 <td className="whitespace-nowrap px-4 py-3">
-                  {new Date(log.created_at).toLocaleString('es-CL')}
+                  {new Date(log.created).toLocaleString('es-CL')}
                 </td>
                 <td className="px-4 py-3 font-mono text-xs">{log.action}</td>
                 <td className="px-4 py-3">{log.resource_type ?? '—'}</td>

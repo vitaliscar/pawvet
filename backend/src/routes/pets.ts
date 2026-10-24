@@ -7,7 +7,8 @@ import { requireAuth, requireRole } from '../middleware/auth.js';
 
 export const petRoutes = new Hono();
 
-petRoutes.use('*', requireAuth, requireRole('owner', 'admin'));
+// Solo dueños: el admin no tiene perfil pet_owners y opera vía /api/admin.
+petRoutes.use('*', requireAuth, requireRole('owner'));
 
 const petSchema = z.object({
   name: z.string().min(1).max(100),

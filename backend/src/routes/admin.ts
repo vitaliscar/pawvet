@@ -63,8 +63,9 @@ adminRoutes.get('/audit-logs', async (c) => {
 
   const { page, limit, user_id, action } = parsed.data;
   const filters: string[] = [];
-  if (user_id) filters.push(`user_id = "${user_id}"`);
-  if (action) filters.push(`action ~ "${action}"`);
+  // pb.filter escapa los parámetros: nunca interpolar input del cliente en el filtro.
+  if (user_id) filters.push(pb.filter('user_id = {:user_id}', { user_id }));
+  if (action) filters.push(pb.filter('action ~ {:action}', { action }));
 
   await ensureAdminAuth();
   const result = await pb.collection('audit_logs').getList(page, limit, {

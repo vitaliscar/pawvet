@@ -9,7 +9,7 @@ interface PendingVet {
   clinic_name: string | null;
   rut_document_url: string | null;
   license_document_url: string | null;
-  created_at: string;
+  created: string;
 }
 
 export default async function PendingVetsPage() {
