@@ -30,6 +30,10 @@
 .introLabel{font-size:13px;font-weight:700;color:#a45e43;padding-top:17px}
 .intro h2{font-size:clamp(43px,4.5vw,76px);line-height:1.1;margin:0 0 32px}
 .intro p{font-size:18px;line-height:1.7;max-width:650px;color:#456056;margin:0}
+.terms{list-style:none;padding:0;margin:0 0 40px;display:grid;gap:14px;max-width:650px}
+.terms li{font-size:17px;line-height:1.6;color:#456056;padding-left:28px;position:relative}
+.terms li::before{content:'';position:absolute;left:0;top:.62em;width:12px;height:2px;background:#b65f40}
+.vetStatus a{text-decoration:underline;text-underline-offset:3px}
 .process{background:#e7ece4;padding:108px max(5%,calc((100vw - 1188px)/2)) 124px}
 .processHead{display:grid;grid-template-columns:58% 42%;align-items:end;gap:32px;margin-bottom:73px}
 .process h2{font-size:clamp(43px,4.4vw,72px);line-height:1.05;margin:0}

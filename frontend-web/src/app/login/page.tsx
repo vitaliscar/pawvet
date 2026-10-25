@@ -4,13 +4,18 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, useState } from 'react';
 import { createClientPb } from '@/lib/pocketbase/client';
 
-const HOME_BY_ROLE: Record<string, string> = { admin: '/dashboard', vet: '/vet' };
+const HOME_BY_ROLE: Record<string, string> = { admin: '/dashboard', vet: '/vet', owner: '/reservar' };
+const AREAS_BY_ROLE: Record<string, string[]> = {
+  admin: ['/dashboard'],
+  vet: ['/vet'],
+  owner: ['/reservar', '/mis-citas'],
+};
 
 /** Solo rutas internas dentro del área del rol (evita open redirect con ?next=). */
 function destinationFor(role: string, next: string | null): string {
-  const home = HOME_BY_ROLE[role] ?? '/';
-  if (next && (next === home || next.startsWith(`${home}/`))) return next;
-  return home;
+  const areas = AREAS_BY_ROLE[role] ?? [];
+  if (next && areas.some((a) => next === a || next.startsWith(`${a}/`))) return next;
+  return HOME_BY_ROLE[role] ?? '/';
 }
 
 function LoginForm() {
@@ -32,7 +37,7 @@ function LoginForm() {
       role = pb.authStore.record?.role ?? '';
       if (!(role in HOME_BY_ROLE)) {
         pb.authStore.clear();
-        setError('Este acceso es para veterinarios y administradores.');
+        setError('Tu cuenta no tiene un rol válido. Escríbenos para revisarla.');
         setIsBusy(false);
         return;
       }
@@ -50,7 +55,7 @@ function LoginForm() {
     <main className="flex min-h-screen flex-col items-center justify-center gap-6 bg-[#e8e9dc] px-6">
       <div className="text-center">
         <h1 className="font-serif text-5xl tracking-tight text-paw-900">PAWVET<span className="text-clay">.</span></h1>
-        <p className="mt-2 text-sm font-semibold text-paw-700">Acceso para veterinarios y administración</p>
+        <p className="mt-2 text-sm font-semibold text-paw-700">Inicia sesión para agendar o gestionar visitas</p>
       </div>
       <form onSubmit={handleSubmit} className="w-full max-w-sm space-y-4 bg-white p-8 shadow-sm">
         <div>
@@ -93,6 +98,9 @@ function LoginForm() {
         >
           {isBusy ? 'Ingresando…' : 'Iniciar sesión'}
         </button>
+        <p className="text-center text-sm text-ink/70">
+          ¿Primera vez? <a href="/registro" className="font-semibold text-paw-700 underline">Crea tu cuenta de tutor</a>
+        </p>
       </form>
     </main>
   );

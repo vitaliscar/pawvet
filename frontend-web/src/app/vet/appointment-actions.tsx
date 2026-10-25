@@ -12,15 +12,20 @@ const PRIMARY: Partial<Record<AppointmentStatus, { to: Target; label: string }>>
   confirmed: { to: 'completed', label: 'Marcar completada' },
 };
 
-export function AppointmentActions({ id, status }: { id: string; status: AppointmentStatus }) {
+/** canAdvance=false (tutor): solo puede cancelar; confirmar/completar es del vet. */
+export function AppointmentActions({ id, status, canAdvance = true }: {
+  id: string;
+  status: AppointmentStatus;
+  canAdvance?: boolean;
+}) {
   const router = useRouter();
   const [isBusy, setIsBusy] = useState(false);
   const [isCancelling, setIsCancelling] = useState(false);
   const [reason, setReason] = useState('');
   const [error, setError] = useState<string | null>(null);
 
-  const primary = PRIMARY[status];
-  if (!primary) return null;
+  if (status !== 'pending' && status !== 'confirmed') return null;
+  const primary = canAdvance ? PRIMARY[status] : undefined;
 
   async function update(to: Target) {
     setIsBusy(true);
@@ -39,7 +44,7 @@ export function AppointmentActions({ id, status }: { id: string; status: Appoint
     return (
       <div className="mt-4 space-y-2">
         <label htmlFor={`reason-${id}`} className="block text-sm font-medium text-ink">
-          Motivo de la cancelación (se informa al tutor)
+          Motivo de la cancelación (opcional)
         </label>
         <input
           id={`reason-${id}`}
@@ -73,14 +78,16 @@ export function AppointmentActions({ id, status }: { id: string; status: Appoint
   return (
     <div className="mt-4">
       <div className="flex flex-wrap gap-2">
-        <button
-          type="button"
-          onClick={() => update(primary.to)}
-          disabled={isBusy}
-          className="rounded-lg bg-paw-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-paw-700 active:scale-[0.98] disabled:opacity-50"
-        >
-          {isBusy ? 'Guardando…' : primary.label}
-        </button>
+        {primary && (
+          <button
+            type="button"
+            onClick={() => update(primary.to)}
+            disabled={isBusy}
+            className="rounded-lg bg-paw-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-paw-700 active:scale-[0.98] disabled:opacity-50"
+          >
+            {isBusy ? 'Guardando…' : primary.label}
+          </button>
+        )}
         <button
           type="button"
           onClick={() => setIsCancelling(true)}

@@ -1,11 +1,21 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import { BOOKING_TERMS, PILOT_COMMUNES } from '@/lib/pilot';
 import { createServerPb } from '@/lib/pocketbase/server';
 import styles from './home.module.css';
 
+const ACCOUNT_LINK: Record<string, { href: string; label: string }> = {
+  admin: { href: '/dashboard', label: 'Ir al panel' },
+  vet: { href: '/vet', label: 'Mi agenda' },
+  owner: { href: '/mis-citas', label: 'Mis citas' },
+};
+const COMMUNES = PILOT_COMMUNES.map((c) => c.name).join(' y ');
+
 export default async function HomePage() {
   const pb = await createServerPb();
-  const isAdmin = pb.authStore.isValid && pb.authStore.record?.role === 'admin';
+  const role = pb.authStore.isValid ? (pb.authStore.record?.role as string) : '';
+  const account = ACCOUNT_LINK[role] ?? { href: '/login', label: 'Ingresar' };
+  const bookingHref = role === 'owner' ? '/reservar' : '/registro';
 
   return (
     <main className={styles.page}>
@@ -17,10 +27,11 @@ export default async function HomePage() {
         <nav className={styles.nav} aria-label="Navegación principal">
           <a href="#propuesta">La experiencia</a>
           <a href="#como-funciona">Cómo funciona</a>
+          <a href="#cobertura">Cobertura</a>
           <a href="#veterinarios">Para veterinarios</a>
         </nav>
-        <Link href={isAdmin ? '/dashboard' : '/login'} className={styles.headerLink}>
-          {isAdmin ? 'Ir al panel' : 'Acceso al panel'} <span aria-hidden="true">↗</span>
+        <Link href={account.href} className={styles.headerLink}>
+          {account.label} <span aria-hidden="true">↗</span>
         </Link>
       </header>
 
@@ -29,11 +40,11 @@ export default async function HomePage() {
           <p className={styles.status}>Atención veterinaria a domicilio · Chile</p>
           <h1 id="hero-title">El cuidado llega<br />a <em>su lugar feliz.</em></h1>
           <p className={styles.heroLead}>
-            Estamos creando una forma más cercana de cuidar a tu mascota: atención profesional en casa, con información clara desde el primer paso.
+            Atención veterinaria profesional en tu casa. Eliges a un profesional verificado, ves el precio final y reservas en minutos.
           </p>
           <div className={styles.heroActions}>
-            <a href="#como-funciona" className={styles.primaryButton}>Conoce la propuesta <span aria-hidden="true">↗</span></a>
-            <span className={styles.launchNote}>PAWVET está en preparación</span>
+            <Link href={bookingHref} className={styles.primaryButton}>Agendar una visita <span aria-hidden="true">↗</span></Link>
+            <span className={styles.launchNote}>Piloto en {COMMUNES}</span>
           </div>
         </div>
         <div className={styles.heroVisual}>
@@ -65,8 +76,8 @@ export default async function HomePage() {
 
       <section id="como-funciona" className={styles.process}>
         <div className={styles.processHead}>
-          <h2>Así será tu experiencia</h2>
-          <p>Estamos construyendo una reserva sencilla, con la información que necesitas antes de decidir.</p>
+          <h2>Así funciona</h2>
+          <p>Una reserva sencilla, con la información que necesitas antes de decidir.</p>
         </div>
         <div className={styles.processGrid}>
           <article className={styles.processItem}>
@@ -87,12 +98,25 @@ export default async function HomePage() {
         </div>
       </section>
 
+      <section id="cobertura" className={styles.intro} aria-labelledby="cobertura-title">
+        <div className={styles.introLabel}>Cobertura y condiciones</div>
+        <div>
+          <h2 id="cobertura-title">Hoy visitamos<br /><em>{COMMUNES}.</em></h2>
+          <ul className={styles.terms}>
+            {BOOKING_TERMS.map((term) => <li key={term}>{term}</li>)}
+          </ul>
+          <Link href={bookingHref} className={styles.primaryButton}>Agendar una visita <span aria-hidden="true">↗</span></Link>
+        </div>
+      </section>
+
       <section id="veterinarios" className={styles.vetSection}>
         <div className={styles.vetSymbol} aria-hidden="true">P<span>.</span></div>
         <div className={styles.vetCopy}>
           <h2>Para quienes cuidan<br /><em>todos los días.</em></h2>
           <p>PAWVET también está pensado para veterinarios: perfiles verificados, disponibilidad organizada y antecedentes clínicos accesibles durante la atención.</p>
-          <p className={styles.vetStatus}>La incorporación de profesionales se habilitará en una próxima etapa.</p>
+          <p className={styles.vetStatus}>
+            ¿Atiendes en {COMMUNES}? <a href="mailto:info@pawvet.net?subject=Quiero%20sumarme%20al%20piloto">Escríbenos para sumarte al piloto</a>.
+          </p>
         </div>
       </section>
 

@@ -25,7 +25,7 @@ ownerRoutes.get('/me', async (c) => {
     const data = await pb
       .collection('pet_owners')
       .getFirstListItem(`user_id = "${c.get('user').id}"`, {
-        fields: 'id,full_name,address,preferred_radius_km,verified,terms_accepted_at,privacy_accepted_at',
+        fields: 'id,full_name,address,lat,lon,preferred_radius_km,verified,terms_accepted_at,privacy_accepted_at',
       });
     return c.json({ success: true, data });
   } catch {

@@ -5,6 +5,8 @@ import PocketBase from 'pocketbase';
 const PROTECTED: ReadonlyArray<[prefix: string, role: string]> = [
   ['/dashboard', 'admin'],
   ['/vet', 'vet'],
+  ['/reservar', 'owner'],
+  ['/mis-citas', 'owner'],
 ];
 
 export function middleware(request: NextRequest) {
