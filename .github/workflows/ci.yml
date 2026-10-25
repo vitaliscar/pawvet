@@ -38,6 +38,53 @@ jobs:
       - run: npm ci
       - run: npm run typecheck
 
+  # Reservas (doble cupo, idempotencia) y matriz de permisos owner/vet/admin contra
+  # PocketBase + API reales. Credenciales desechables: la base vive solo en el runner.
+  e2e:
+    runs-on: ubuntu-latest
+    env:
+      PB_VERSION: 0.40.6
+      PB_SUPERUSER_EMAIL: ci@pawvet.local
+      PB_SUPERUSER_PASSWORD: Passw0rd-ci-only-123
+      PB_URL: http://127.0.0.1:8099
+      API_URL: http://127.0.0.1:3099
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+      - run: npm ci
+        working-directory: backend
+      - name: PocketBase con migraciones del repo
+        working-directory: pocketbase
+        run: |
+          wget -q "https://github.com/pocketbase/pocketbase/releases/download/v${PB_VERSION}/pocketbase_${PB_VERSION}_linux_amd64.zip" -O pb.zip
+          unzip -q pb.zip pocketbase
+          ./pocketbase superuser upsert "$PB_SUPERUSER_EMAIL" "$PB_SUPERUSER_PASSWORD"
+          ./pocketbase serve --http=127.0.0.1:8099 > pb.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf "$PB_URL/api/health" > /dev/null && break; sleep 1; done
+      - name: API
+        working-directory: backend
+        env:
+          PORT: 3099
+          NODE_ENV: test
+          POCKETBASE_URL: http://127.0.0.1:8099
+          POCKETBASE_ADMIN_EMAIL: ci@pawvet.local
+          POCKETBASE_ADMIN_PASSWORD: Passw0rd-ci-only-123
+          MEDICAL_DATA_ENCRYPTION_KEY: '0000000000000000000000000000000000000000000000000000000000000000'
+          TRANSBANK_COMMERCE_CODE: ci
+          TRANSBANK_API_KEY: ci
+        run: |
+          npx tsx src/index.ts > api.log 2>&1 &
+          for i in $(seq 1 60); do curl -sf "$API_URL/health" > /dev/null && break; sleep 1; done
+      - run: npm run e2e
+        working-directory: backend
+      - name: Logs ante fallo
+        if: failure()
+        run: tail -50 pocketbase/pb.log backend/api.log
+
   secrets-scan:
     runs-on: ubuntu-latest
     steps:
