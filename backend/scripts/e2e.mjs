@@ -78,6 +78,8 @@ const service = must(await req(API, 'PUT', '/api/vets/me/services', vetA.token,
 must(await req(API, 'PUT', '/api/vets/me/availability', vetA.token,
   [{ weekday: 1, start_time: '09:00', end_time: '12:00', service_type: 'home_visit', price_clp: 30000 }]), 'availability', 200);
 
+must(await req(API, 'GET', '/api/search/vets?lat=-33.45&lon=-70.6&radius_km=10', ownerA.token), 'search', 200);
+must(await req(API, 'GET', '/api/search/vets?lat=-33.45&lon=-70.6&radius_km=10', ownerB.token), 'search', 200);
 const slots = must(await req(API, 'GET', `/api/vets/${vetProfileA.id}/slots?date=${DATE}`, ownerA.token), 'slots', 200).data.slots;
 check(JSON.stringify(slots) === '["09:00","10:00","11:00"]', `bloques libres ${JSON.stringify(slots)}`);
 
@@ -138,6 +140,9 @@ await expectStatus(st(winnerOwner, 'cancelled'), [409], 'no se cancela una cita 
 console.log('\n# Admin');
 const metrics = await expectStatus(req(API, 'GET', '/api/admin/metrics', admin.token), [200], 'admin → métricas');
 check(metrics.json?.data?.appointments?.completed >= 1, 'métricas cuentan la cita completada');
+const pilot = await expectStatus(req(API, 'GET', '/api/admin/pilot-metrics?days=1', admin.token), [200], 'admin → métricas del piloto');
+check(pilot.json?.data?.searchers >= 2 && pilot.json?.data?.bookers >= 1, 'el piloto mide búsquedas y reservas');
+await expectStatus(req(API, 'GET', '/api/admin/pilot-metrics', ownerA.token), [403], 'tutor → métricas del piloto');
 const injection = encodeURIComponent('" || id != "');
 const logs = await expectStatus(req(API, 'GET', `/api/admin/audit-logs?action=${injection}`, admin.token), [200], 'filtro de auditoría con comillas');
 check(logs.json?.data?.length === 0, 'la inyección no amplía el filtro');

@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { z } from 'zod';
 import { audit } from '../lib/audit.js';
 import { nowInChile } from '../lib/booking.js';
+import { computePilotMetrics, type PilotAppointment } from '../lib/pilot-metrics.js';
 import { ensureAdminAuth, pb } from '../lib/pocketbase.js';
 import { requireAuth, requireRole } from '../middleware/auth.js';
 
@@ -108,6 +109,46 @@ adminRoutes.get('/metrics', async (c) => {
       appointments: { today: todayAppointments, pending, confirmed, completed, cancelled },
     },
   });
+});
+
+// Métricas del piloto en una ventana de días (por defecto 28: el periodo de medición)
+adminRoutes.get('/pilot-metrics', async (c) => {
+  const parsed = z
+    .object({ days: z.coerce.number().int().min(1).max(365).default(28) })
+    .safeParse(c.req.query());
+  if (!parsed.success) return c.json({ success: false, error: 'Parámetros inválidos' }, 400);
+
+  const since = new Date(Date.now() - parsed.data.days * 86_400_000).toISOString().replace('T', ' ');
+  const userIdsFor = async (action: string) =>
+    (
+      await pb.collection('audit_logs').getFullList({
+        filter: pb.filter('action = {:action} && created >= {:since}', { action, since }),
+        fields: 'user_id',
+      })
+    ).map((log) => log.user_id as string);
+
+  // ponytail: agrega en memoria; suficiente para el volumen del piloto.
+  await ensureAdminAuth();
+  const [searcherIds, bookerIds, appointments] = await Promise.all([
+    userIdsFor('search.vets'),
+    userIdsFor('appointment.create'),
+    pb.collection('appointments').getFullList({
+      filter: pb.filter('created >= {:since}', { since }),
+      expand: 'vet_id',
+      fields: 'vet_id,status,expand.vet_id.full_name',
+    }),
+  ]);
+
+  const data = computePilotMetrics({
+    searcherIds,
+    bookerIds,
+    appointments: appointments.map((a) => ({
+      vet_id: a.vet_id as string,
+      vet_name: (a.expand?.vet_id?.full_name as string | undefined) ?? '—',
+      status: a.status as PilotAppointment['status'],
+    })),
+  });
+  return c.json({ success: true, data: { days: parsed.data.days, ...data } });
 });
 
 // Suscripciones activas

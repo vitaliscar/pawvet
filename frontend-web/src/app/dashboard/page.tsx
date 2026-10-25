@@ -20,8 +20,75 @@ const STATUS_ROWS = [
   { key: 'cancelled', label: 'Canceladas' },
 ] as const;
 
+interface PilotMetrics {
+  days: number;
+  searchers: number;
+  bookers: number;
+  search_to_booking_pct: number | null;
+  appointments: { total: number; completed: number; cancelled: number };
+  cancellation_pct: number | null;
+  by_vet: { vet_id: string; vet_name: string; total: number; completed: number; cancelled: number }[];
+}
+
+const pct = (v: number | null) => (v == null ? '—' : `${v.toLocaleString('es-CL')} %`);
+
+function PilotSection({ p }: { p: PilotMetrics }) {
+  const kpis = [
+    { label: 'Búsqueda → reserva', value: pct(p.search_to_booking_pct), hint: `${p.bookers} de ${p.searchers} tutores` },
+    { label: 'Citas completadas', value: String(p.appointments.completed), hint: `de ${p.appointments.total} reservadas` },
+    {
+      label: 'Cancelación',
+      value: pct(p.cancellation_pct),
+      hint: `${p.appointments.cancelled} ${p.appointments.cancelled === 1 ? 'cancelada' : 'canceladas'}`,
+    },
+  ];
+  return (
+    <section aria-labelledby="piloto" className="mt-10">
+      <h2 id="piloto" className="text-lg font-bold text-paw-900">Piloto · últimos {p.days} días</h2>
+      <dl className="mt-4 grid gap-4 sm:grid-cols-3">
+        {kpis.map((k) => (
+          <div key={k.label} className="rounded-xl border border-paw-100 bg-white p-5">
+            <dt className="text-sm font-medium text-ink/70">{k.label}</dt>
+            <dd className="mt-1 text-3xl font-bold tabular-nums text-paw-900">{k.value}</dd>
+            <dd className="mt-1 text-sm text-ink/60">{k.hint}</dd>
+          </div>
+        ))}
+      </dl>
+      <div className="mt-4 overflow-x-auto rounded-xl border border-paw-100 bg-white">
+        <table className="min-w-full text-sm">
+          <caption className="sr-only">Reservas por veterinario</caption>
+          <thead className="bg-paw-50 text-left text-paw-900">
+            <tr>
+              <th className="px-4 py-3 font-semibold">Veterinario</th>
+              <th className="px-4 py-3 text-right font-semibold">Reservas</th>
+              <th className="px-4 py-3 text-right font-semibold">Completadas</th>
+              <th className="px-4 py-3 text-right font-semibold">Canceladas</th>
+            </tr>
+          </thead>
+          <tbody>
+            {p.by_vet.map((v) => (
+              <tr key={v.vet_id} className="border-t border-paw-100">
+                <td className="px-4 py-3">{v.vet_name}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{v.total}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{v.completed}</td>
+                <td className="px-4 py-3 text-right tabular-nums">{v.cancelled}</td>
+              </tr>
+            ))}
+            {p.by_vet.length === 0 && (
+              <tr><td colSpan={4} className="px-4 py-6 text-center text-ink/60">Sin reservas en el periodo.</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+    </section>
+  );
+}
+
 export default async function DashboardHome() {
-  const res = await apiFetch<Metrics>('/api/admin/metrics');
+  const [res, pilot] = await Promise.all([
+    apiFetch<Metrics>('/api/admin/metrics'),
+    apiFetch<PilotMetrics>('/api/admin/pilot-metrics?days=28'),
+  ]);
   const m = res.data;
 
   return (
@@ -66,6 +133,8 @@ export default async function DashboardHome() {
           </div>
         </div>
       )}
+
+      {pilot.data && <PilotSection p={pilot.data} />}
     </div>
   );
 }

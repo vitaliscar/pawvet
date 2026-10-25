@@ -1,5 +1,6 @@
 import { Hono } from 'hono';
 import { z } from 'zod';
+import { audit } from '../lib/audit.js';
 import { haversineKm } from '../lib/geo.js';
 import { requireAuth } from '../middleware/auth.js';
 import { ensureAdminAuth, pb } from '../lib/pocketbase.js';
@@ -64,6 +65,8 @@ searchRoutes.get('/vets', requireAuth, async (c) => {
       .sort((a, b) => a.distance_km - b.distance_km)
       .slice(0, 100);
 
+    // Métrica del piloto (búsqueda → reserva): sin coordenadas ni datos personales.
+    await audit(c, { action: 'search.vets', details: { results: results.length, radius_km } });
     return c.json({ success: true, data: results });
   } catch (err) {
     console.error('[search] error:', err);
