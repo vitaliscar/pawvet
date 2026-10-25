@@ -15,8 +15,14 @@
     },
     "android": {
       "package": "net.pawvet.app",
-      "permissions": ["ACCESS_FINE_LOCATION"]
+      "permissions": [
+        "ACCESS_FINE_LOCATION"
+      ]
     },
-    "plugins": ["expo-location", "expo-secure-store"]
+    "plugins": [
+      "expo-location",
+      "expo-secure-store",
+      "expo-asset"
+    ]
   }
 }

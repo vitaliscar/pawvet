@@ -38,5 +38,17 @@ export interface NearbyVet {
   bio: string | null;
   offers_home_visits: boolean;
   offers_clinic_visits: boolean;
+  lat: number | null;
+  lon: number | null;
   distance_km: number;
 }
+
+export interface VetService {
+  id: string;
+  kind: string;
+  duration_min: number;
+  price_clp: number;
+  home_visit_fee_clp: number | null;
+}
+
+export const totalPrice = (s: VetService): number => s.price_clp + (s.home_visit_fee_clp ?? 0);

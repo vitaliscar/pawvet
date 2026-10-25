@@ -55,6 +55,9 @@ searchRoutes.get('/vets', requireAuth, async (c) => {
         bio: v.bio,
         offers_home_visits: v.offers_home_visits,
         offers_clinic_visits: v.offers_clinic_visits,
+        // Zona base del vet (centro de su comuna en el piloto) para el marcador del mapa.
+        lat: v.clinic_lat,
+        lon: v.clinic_lon,
         distance_km: Math.round(haversineKm(lat, lon, v.clinic_lat as number, v.clinic_lon as number) * 100) / 100,
       }))
       .filter((v) => v.distance_km <= radius_km)
