@@ -8,6 +8,9 @@ const ALGORITHM = 'aes-256-gcm';
 const IV_LENGTH = 12;
 
 const key = Buffer.from(env.MEDICAL_DATA_ENCRYPTION_KEY, 'hex');
+const previousKey = env.MEDICAL_DATA_ENCRYPTION_KEY_PREVIOUS
+  ? Buffer.from(env.MEDICAL_DATA_ENCRYPTION_KEY_PREVIOUS, 'hex')
+  : null;
 
 export function encryptField(plaintext: string): string {
   const iv = randomBytes(IV_LENGTH);
@@ -15,6 +18,12 @@ export function encryptField(plaintext: string): string {
   const ciphertext = Buffer.concat([cipher.update(plaintext, 'utf8'), cipher.final()]);
   const authTag = cipher.getAuthTag();
   return [iv, authTag, ciphertext].map((b) => b.toString('base64')).join('.');
+}
+
+function decryptWith(secret: Buffer, iv: Buffer, authTag: Buffer, ciphertext: Buffer): string {
+  const decipher = createDecipheriv(ALGORITHM, secret, iv);
+  decipher.setAuthTag(authTag);
+  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
 }
 
 export function decryptField(stored: string): string {
@@ -27,9 +36,25 @@ export function decryptField(stored: string): string {
     Buffer,
     Buffer,
   ];
-  const decipher = createDecipheriv(ALGORITHM, key, iv);
-  decipher.setAuthTag(authTag);
-  return Buffer.concat([decipher.update(ciphertext), decipher.final()]).toString('utf8');
+  try {
+    return decryptWith(key, iv, authTag, ciphertext);
+  } catch (err) {
+    // GCM rechaza la clave equivocada: durante una rotación se intenta la anterior.
+    if (!previousKey) throw err;
+    return decryptWith(previousKey, iv, authTag, ciphertext);
+  }
+}
+
+/** true si el valor ya está cifrado con la clave actual (lo usa el script de rotación). */
+export function isEncryptedWithCurrentKey(stored: string): boolean {
+  const [iv, authTag, ciphertext] = stored.split('.').map((p) => Buffer.from(p, 'base64'));
+  if (!iv || !authTag || !ciphertext) return false;
+  try {
+    decryptWith(key, iv, authTag, ciphertext);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /** Encripta si hay valor; null pasa intacto. */

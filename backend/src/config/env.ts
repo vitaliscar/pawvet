@@ -12,6 +12,12 @@ const envSchema = z.object({
   MEDICAL_DATA_ENCRYPTION_KEY: z
     .string()
     .regex(/^[0-9a-f]{64}$/i, 'Debe ser 32 bytes en hex (openssl rand -hex 32)'),
+  // Solo durante una rotación: permite leer datos cifrados con la clave anterior
+  // mientras scripts/rotate-medical-key.ts los re-cifra con la actual.
+  MEDICAL_DATA_ENCRYPTION_KEY_PREVIOUS: z
+    .string()
+    .regex(/^[0-9a-f]{64}$/i, 'Debe ser 32 bytes en hex')
+    .optional(),
 
   TRANSBANK_COMMERCE_CODE: z.string().min(1),
   TRANSBANK_API_KEY: z.string().min(1),
