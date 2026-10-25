@@ -60,7 +60,9 @@ En producción, infra/docker-compose.yml levanta PocketBase, API, web y Nginx. R
 
 ## Documentación
 
+- docs/LANZAMIENTO.md — pasos humanos para lanzar el piloto (decisiones, cuentas, despliegue)
 - docs/PILOTO.md — propuesta de alcance del piloto y flujo de reserva (pendiente de aprobación)
+- infra/RESTAURACION.md — backups, clave médica y restauración
 - docs/ESTADO-ACTUAL.md — estado del código y pendientes conocidos
 - docs/MODELO-NEGOCIO-REFERENTES.md — investigación de referentes
 - docs/CLAUDE.md — plan histórico; algunas referencias de stack están desactualizadas
