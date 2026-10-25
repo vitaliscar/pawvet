@@ -20,7 +20,7 @@ export default async function HomePage() {
   return (
     <main className={styles.page}>
       <header className={styles.header}>
-        <Link href="/" className={styles.brand} aria-label="PAWVET, inicio">
+        <Link href="/" className={styles.brand}>
           <span className={styles.brandMark} aria-hidden="true">P</span>
           <span>PAWVET<span className={styles.brandPeriod}>.</span></span>
         </Link>

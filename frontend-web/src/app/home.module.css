@@ -27,7 +27,7 @@
 .promiseStrip{background:#214b3d;color:#f6f4ee;display:flex;justify-content:center;align-items:center;gap:37px;padding:20px 22px;font-size:13px;letter-spacing:.025em;font-weight:700;text-align:center}
 .stripDot{width:4px;height:4px;border-radius:50%;background:#c99073;flex:none}
 .intro{max-width:1320px;margin:auto;padding:136px 5% 142px;display:grid;grid-template-columns:32% 68%;gap:24px}
-.introLabel{font-size:13px;font-weight:700;color:#a45e43;padding-top:17px}
+.introLabel{font-size:13px;font-weight:700;color:#95522f;padding-top:17px}
 .intro h2{font-size:clamp(43px,4.5vw,76px);line-height:1.1;margin:0 0 32px}
 .intro p{font-size:18px;line-height:1.7;max-width:650px;color:#456056;margin:0}
 .terms{list-style:none;padding:0;margin:0 0 40px;display:grid;gap:14px;max-width:650px}
