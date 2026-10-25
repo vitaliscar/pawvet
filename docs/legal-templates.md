@@ -209,7 +209,7 @@ Solo compartimos con:
 
 - Historiales médicos: AES-256 en reposo
 - Datos en tránsito: TLS 1.3
-- Contraseñas: Nunca almacenadas (Clerk las maneja)
+- Contraseñas: Nunca almacenadas en texto plano (solo su hash, gestionado por PocketBase)
 
 5. RETENCIÓN DE DATOS
 

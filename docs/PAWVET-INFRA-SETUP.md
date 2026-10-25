@@ -412,13 +412,17 @@ git config user.email "dev@pawvet.net"
 ```bash
 # Backend .env
 cat > backend/.env << 'EOF'
-DATABASE_URL=postgresql://user:password@db:5432/pawvet
-CLERK_SECRET_KEY=sk_test_xxx
-TRANSBANK_API_KEY=xxx
-GOOGLE_MAPS_API_KEY=xxx
-SENDGRID_API_KEY=xxx
 NODE_ENV=production
+POCKETBASE_URL=http://pocketbase:8090
+POCKETBASE_ADMIN_EMAIL=admin@pawvet.net
+POCKETBASE_ADMIN_PASSWORD=xxx
+MEDICAL_DATA_ENCRYPTION_KEY=xxx   # openssl rand -hex 32 — respaldar aparte (infra/RESTAURACION.md)
+TRANSBANK_COMMERCE_CODE=xxx
+TRANSBANK_API_KEY=xxx
+SENDGRID_API_KEY=xxx
+EMAIL_FROM=noreply@pawvet.net
 EOF
+# Lista completa y comentada: backend/.env.example
 
 # IMPORTANTE: Nunca commitees .env a git
 echo ".env" >> backend/.gitignore

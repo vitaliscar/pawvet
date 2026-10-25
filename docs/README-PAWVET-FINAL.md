@@ -1,3 +1,5 @@
+> **Documento histórico.** Describe el plan original con Supabase y Clerk. El stack vigente es **PocketBase + API Hono** y la autenticación la hace PocketBase: las secciones sobre Supabase, RLS, pgAudit o Clerk no aplican. Estado real: [ESTADO-ACTUAL.md](ESTADO-ACTUAL.md) · Piloto: [PILOTO.md](PILOTO.md).
+
 # 🐾 PAWVET — Proyecto Final Confirmado
 
 **Fecha:** 18 de julio de 2026  

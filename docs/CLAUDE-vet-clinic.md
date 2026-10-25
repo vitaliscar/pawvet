@@ -1,3 +1,5 @@
+> **Documento histórico.** Describe el plan original con Supabase y Clerk. El stack vigente es **PocketBase + API Hono** y la autenticación la hace PocketBase: las secciones sobre Supabase, RLS, pgAudit o Clerk no aplican. Estado real: [ESTADO-ACTUAL.md](ESTADO-ACTUAL.md) · Piloto: [PILOTO.md](PILOTO.md).
+
 # VetConnect — CLAUDE.md para Desarrollo
 
 **Copiar este archivo a tu proyecto como `CLAUDE.md`**
