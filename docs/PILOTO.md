@@ -1,7 +1,8 @@
-# PAWVET — Alcance del piloto (propuesta)
+# PAWVET — Alcance del piloto
 
-Estado: **propuesta pendiente de aprobación** (Fase 0). Los valores marcados
-como _decisión_ los fija el equipo; el código ya soporta los demás.
+Estado: **aprobado el 24-10-2026** (Fase 0), tal como está escrito. Decisiones tomadas:
+comunas Providencia y Ñuñoa; cancelación del tutor sin costo hasta la hora de inicio;
+cobertura por la comuna elegida al registrarse más el radio de búsqueda.
 
 ## Comunas
 

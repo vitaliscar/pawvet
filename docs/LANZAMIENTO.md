@@ -5,7 +5,7 @@ decisiones, cuentas o acciones de personas. Orden sugerido:
 
 ## 1. Decisiones (Fase 0 y 1)
 
-- [ ] Aprobar [PILOTO.md](PILOTO.md): comunas, plazo de cancelación y regla de cobertura.
+- [x] Aprobar [PILOTO.md](PILOTO.md): comunas, plazo de cancelación y regla de cobertura (24-10-2026).
 - [ ] Aprobar [DECISION-POCKETBASE.md](DECISION-POCKETBASE.md) y la frecuencia de backup.
 - [ ] Revisar con abogado `legal-templates.md` (términos, privacidad Ley 19.628, acuerdo de veterinario independiente).
 

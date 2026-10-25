@@ -8,7 +8,7 @@ imágenes Docker y escaneo de secretos.
 
 | Fase | Estado | Verificación |
 | --- | --- | --- |
-| 0 — Piloto | Propuesta escrita ([PILOTO.md](PILOTO.md)); falta aprobación | — |
+| 0 — Piloto | Alcance aprobado el 24-10-2026 ([PILOTO.md](PILOTO.md)); documentos de Supabase/Clerk marcados como históricos | Aprobación del equipo |
 | 1 — Base de datos | 7 migraciones idempotentes, backup diario, decisión documentada | Simulacro de restauración con conteos idénticos |
 | 2 — Permisos y datos sensibles | Filtros escapados, campos personales ocultos, rotación de clave médica | E2E: matriz owner/vet/admin vía API y PocketBase directo |
 | 3 — Motor de citas | Servicios, grilla de 60 min, precio con traslado, estados, idempotencia | Dos reservas simultáneas → 201 y 409 (CI) |
