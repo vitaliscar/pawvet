@@ -85,6 +85,19 @@ jobs:
         if: failure()
         run: tail -50 pocketbase/pb.log backend/api.log
 
+  # Las imágenes de producción compilan y docker-compose es válido.
+  docker:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - run: docker build -t pawvet-api backend
+      - run: docker build -t pawvet-web frontend-web
+      - run: docker build -t pawvet-pocketbase pocketbase
+      - name: docker compose config
+        run: |
+          touch backend/.env frontend-web/.env.production
+          docker compose -f infra/docker-compose.yml config --quiet
+
   secrets-scan:
     runs-on: ubuntu-latest
     steps:
