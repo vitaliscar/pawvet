@@ -110,6 +110,9 @@ for (const [who, actor] of [['tutor', ownerA], ['vet', vetA]]) {
   await expectStatus(req(API, 'GET', '/api/admin/metrics', actor.token), [403], `${who} → métricas admin`);
   await expectStatus(req(API, 'GET', '/api/admin/audit-logs', actor.token), [403], `${who} → auditoría`);
 }
+await expectStatus(req(API, 'PATCH', '/api/vets/me', vetA.token, { clinic_lat: -33.45, clinic_lon: -70.6 }), [200], 'vet fija su comuna base');
+await expectStatus(req(API, 'PATCH', '/api/vets/me', vetA.token, { verified: true }), [400], 'vet no se auto-verifica vía API');
+await expectStatus(req(API, 'PATCH', '/api/vets/me', ownerA.token, { bio: 'x' }), [403], 'tutor → editar perfil de vet');
 await expectStatus(req(API, 'GET', '/api/pets', vetA.token), [403], 'vet → mascotas');
 await expectStatus(req(API, 'GET', '/api/pets', admin.token), [403], 'admin → rutas de tutor');
 await expectStatus(req(API, 'PUT', '/api/vets/me/services', ownerA.token, []), [403], 'tutor → catálogo de vet');

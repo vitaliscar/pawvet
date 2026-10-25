@@ -7,6 +7,7 @@ const NAV_ITEMS = [
   { href: '/vet', label: 'Agenda' },
   { href: '/vet/servicios', label: 'Servicios' },
   { href: '/vet/disponibilidad', label: 'Disponibilidad' },
+  { href: '/vet/perfil', label: 'Perfil' },
 ] as const;
 
 // Mobile-first: el veterinario usa el panel en el teléfono durante las visitas.

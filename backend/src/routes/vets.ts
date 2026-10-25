@@ -73,8 +73,49 @@ vetRoutes.get('/me', requireRole('vet'), async (c) => {
   ]);
   return c.json({
     success: true,
-    data: { id: vet.id, full_name: vet.full_name, verified: vet.verified, services, availability },
+    data: {
+      id: vet.id,
+      full_name: vet.full_name,
+      verified: vet.verified,
+      clinic_address: vet.clinic_address,
+      clinic_lat: vet.clinic_lat,
+      clinic_lon: vet.clinic_lon,
+      bio: vet.bio,
+      phone: vet.phone,
+      services,
+      availability,
+    },
   });
+});
+
+// Datos editables por el propio vet sin re-verificación (nunca RUT, licencia ni verified)
+const vetSelfUpdateSchema = z
+  .object({
+    clinic_address: z.string().max(300),
+    clinic_lat: z.number().min(-90).max(90),
+    clinic_lon: z.number().min(-180).max(180),
+    bio: z.string().max(2000),
+    phone: z.string().max(20),
+  })
+  .partial();
+
+vetRoutes.patch('/me', requireRole('vet'), async (c) => {
+  const parsed = vetSelfUpdateSchema.strict().safeParse(await c.req.json().catch(() => null));
+  if (!parsed.success) {
+    return c.json({ success: false, error: 'Datos inválidos', details: parsed.error.flatten() }, 400);
+  }
+  await ensureAdminAuth();
+  let vet;
+  try {
+    vet = await pb
+      .collection('veterinarians')
+      .getFirstListItem(pb.filter('user_id = {:userId}', { userId: c.get('user').id }));
+  } catch {
+    return c.json({ success: false, error: 'Perfil de vet no encontrado' }, 404);
+  }
+  await pb.collection('veterinarians').update(vet.id, parsed.data);
+  await audit(c, { action: 'vet.profile.self_update', resourceType: 'veterinarian', resourceId: vet.id });
+  return c.json({ success: true, data: { id: vet.id } });
 });
 
 // Perfil público de un vet (verificado)
