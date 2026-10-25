@@ -210,6 +210,7 @@
       { "name": "service_id", "type": "relation", "collectionId": "vet_services", "maxSelect": 1 },
       { "name": "idempotency_key", "type": "text", "max": 100 },
       { "name": "cancel_reason", "type": "text", "max": 500 },
+      { "name": "reminder_sent_at", "type": "date" },
       { "name": "created", "type": "autodate", "onCreate": true },
       { "name": "updated", "type": "autodate", "onCreate": true, "onUpdate": true }
     ],

@@ -1,6 +1,7 @@
 import { Hono } from 'hono';
 import { ClientResponseError, type RecordModel } from 'pocketbase';
 import { z } from 'zod';
+import { notifyBookingRequested, notifyStatusChanged } from '../lib/appointment-notifier.js';
 import { audit } from '../lib/audit.js';
 import {
   canTransition,
@@ -201,6 +202,7 @@ appointmentRoutes.post('/', requireRole('owner'), async (c) => {
       status: 'pending',
     });
     await audit(c, { action: 'appointment.create', resourceType: 'appointment', resourceId: data.id });
+    void notifyBookingRequested(data.id); // en segundo plano: no demora la respuesta
     return c.json({ success: true, data: summarize(data) }, 201);
   } catch (err) {
     // Carrera resuelta por el índice: o fue un reintento concurrente, o el cupo ya se tomó.
@@ -249,6 +251,7 @@ appointmentRoutes.patch('/:id/status', async (c) => {
     ...(next === 'cancelled' ? { cancel_reason: parsed.data.cancel_reason ?? '' } : {}),
   });
   await audit(c, { action: `appointment.${next}`, resourceType: 'appointment', resourceId: data.id });
+  void notifyStatusChanged(data.id, next, user.role, parsed.data.cancel_reason);
   return c.json({ success: true, data: { id: data.id, status: data.status } });
 });
 
